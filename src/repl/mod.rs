@@ -13,11 +13,11 @@ pub fn start(input: impl Read, output: impl Write) -> std::io::Result<()> {
         let mut l = lexer::Lexer::new(&line);
         loop {
             let tok = l.next_token();
-            if tok.token_type == token::Tokens::EOF {
+            if tok == token::Token::EOF {
                 // break;
                 return  Ok(());
             }
-            println!("Literal:{},Type: {}", tok.literal, tok.token_type);
+            println!("tok: {:?}",tok);
         }
         
     }

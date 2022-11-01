@@ -1,4 +1,4 @@
-use crate::token;
+use crate::token::{self, Token};
 const ZERO_NULL: char = 0 as char;
 pub struct Lexer {
     input: Vec<char>,
@@ -40,54 +40,50 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> token::Token {
-        use token::Tokens;
-        let tok: token::Token;
         self.skip_whitespace();
-        let ch = self.ch.to_string();
-        match self.ch {
+        let ch = self.ch;
+        let tok = match ch {
             '=' => {
                 if self.peek_char() == '=' {
                     self.read_char();
-                    tok = new_token(Tokens::EQ.to_string(), "==")
+                    Token::EQ
                 } else {
-                    tok = new_token(Tokens::ASSIGN.to_string(), &ch)
+                     Token::ASSIGN
                 }
-            }
+            },
 
             '!' => {
                 if self.peek_char() == '=' {
                     self.read_char();
-                    tok = new_token(Tokens::NOT_EQ.to_string(), "!=")
+                    Token::NOTEQ
                 } else {
-                    tok = new_token(Tokens::BANG.to_string(), &ch)
+                    Token::BANG
                 }
-            }
-            ';' => tok = new_token(Tokens::SEMICOLON.to_string(), &ch),
-            '(' => tok = new_token(Tokens::LPAREN.to_string(), &ch),
-            ')' => tok = new_token(Tokens::RPAREN.to_string(), &ch),
-            ',' => tok = new_token(Tokens::COMMA.to_string(), &ch),
-            '+' => tok = new_token(Tokens::PLUS.to_string(), &ch),
-            '-' => tok = new_token(Tokens::MINUS.to_string(), &ch),
-            '/' => tok = new_token(Tokens::SLASH.to_string(), &ch),
-            '*' => tok = new_token(Tokens::ASTERISK.to_string(), &ch),
-            '<' => tok = new_token(Tokens::LT.to_string(), &ch),
-            '>' => tok = new_token(Tokens::GT.to_string(), &ch),
-            '{' => tok = new_token(Tokens::LBRACE.to_string(), &ch),
-            '}' => tok = new_token(Tokens::RBRACE.to_string(), &ch),
-            ZERO_NULL => tok = new_token(Tokens::EOF.to_string(), "\0"),
+            },
+            ';' => Token::SEMICOLON,
+            '(' => Token::LPAREN,
+            ')' => Token::RPAREN,
+            ',' => Token::COMMA,
+            '+' => Token::PLUS,
+            '-' => Token::MINUS,
+            '/' => Token::SLASH,
+            '*' => Token::ASTERISK,
+            '<' => Token::LT,
+            '>' => Token::GT,
+            '{' => Token::LBRACE,
+            '}' => Token::RBRACE,
+            ZERO_NULL => Token::EOF,
             other => {
                 if is_letter(other) {
                     let literal = self.read_identifier();
-                    tok = new_token(token::lookup_ident(&literal), &literal);
-                    return tok;
+                    return token::lookup_ident(&literal);
                 } else if other.is_numeric() {
-                    tok = new_token(Tokens::INT.to_string(), &self.read_number());
-                    return tok;
+                    return Token::INT(self.read_number());
                 } else {
-                    tok = new_token(Tokens::ILLEGAL.to_string(), &ch);
+                    Token::ILLEGAL
                 }
             }
-        }
+        };
         self.read_char();
         tok
     }
@@ -118,9 +114,6 @@ impl Lexer {
     }
 }
 
-fn new_token(token_type: token::TokenType, ch: &str) -> token::Token {
-    token::Token::new(token_type, ch.to_string())
-}
 
 fn is_letter(ch: char) -> bool {
     'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
@@ -132,11 +125,6 @@ mod tests {
 
     #[test]
     fn test_next_token() {
-        struct type_and_literal<'a> {
-            expected_type: &'a str,
-            expected_Literal: &'a str,
-        }
-
         let input = "let five = 5;
         let ten = 10;
         
@@ -160,312 +148,88 @@ mod tests {
 
         ";
         let tests = vec![
-            type_and_literal {
-                expected_type: token::Tokens::LET,
-                expected_Literal: "let",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "five",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ASSIGN,
-                expected_Literal: "=",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "5",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LET,
-                expected_Literal: "let",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "ten",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ASSIGN,
-                expected_Literal: "=",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LET,
-                expected_Literal: "let",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "add",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ASSIGN,
-                expected_Literal: "=",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::FUNCTION,
-                expected_Literal: "fn",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LPAREN,
-                expected_Literal: "(",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "x",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::COMMA,
-                expected_Literal: ",",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "y",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RPAREN,
-                expected_Literal: ")",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LBRACE,
-                expected_Literal: "{",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "x",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::PLUS,
-                expected_Literal: "+",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "y",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RBRACE,
-                expected_Literal: "}",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LET,
-                expected_Literal: "let",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "result",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ASSIGN,
-                expected_Literal: "=",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "add",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LPAREN,
-                expected_Literal: "(",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "five",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::COMMA,
-                expected_Literal: ",",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IDENT,
-                expected_Literal: "ten",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RPAREN,
-                expected_Literal: ")",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::BANG,
-                expected_Literal: "!",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::MINUS,
-                expected_Literal: "-",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SLASH,
-                expected_Literal: "/",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ASTERISK,
-                expected_Literal: "*",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "5",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "5",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LT,
-                expected_Literal: "<",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::GT,
-                expected_Literal: ">",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "5",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::IF,
-                expected_Literal: "if",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LPAREN,
-                expected_Literal: "(",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "5",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LT,
-                expected_Literal: "<",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RPAREN,
-                expected_Literal: ")",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LBRACE,
-                expected_Literal: "{",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RETURN,
-                expected_Literal: "return",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::TRUE,
-                expected_Literal: "true",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RBRACE,
-                expected_Literal: "}",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::ELSE,
-                expected_Literal: "else",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::LBRACE,
-                expected_Literal: "{",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RETURN,
-                expected_Literal: "return",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::FALSE,
-                expected_Literal: "false",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::RBRACE,
-                expected_Literal: "}",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::EQ,
-                expected_Literal: "==",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "10",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::NOT_EQ,
-                expected_Literal: "!=",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::INT,
-                expected_Literal: "9",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::SEMICOLON,
-                expected_Literal: ";",
-            },
-            type_and_literal {
-                expected_type: token::Tokens::EOF,
-                expected_Literal: "\0",
-            },
+        Token::LET,
+        Token::IDENT("five".to_string()),
+        Token::ASSIGN,
+        Token::INT("5".to_string()),
+        Token::SEMICOLON,
+        Token::LET,
+        Token::IDENT("ten".to_string()),
+        Token::ASSIGN,
+        Token::INT("10".to_string()),
+        Token::SEMICOLON,
+        Token::LET,
+        Token::IDENT("add".to_string()),
+        Token::ASSIGN,
+        Token::FUNCTION,
+        Token::LPAREN,
+        Token::IDENT("x".to_string()),
+        Token::COMMA,
+        Token::IDENT("y".to_string()),
+        Token::RPAREN,
+        Token::LBRACE,
+        Token::IDENT("x".to_string()),
+        Token::PLUS,
+        Token::IDENT("y".to_string()),
+        Token::SEMICOLON,
+        Token::RBRACE,
+        Token::SEMICOLON,
+        Token::LET,
+        Token::IDENT("result".to_string()),
+        Token::ASSIGN,
+        Token::IDENT("add".to_string()),
+        Token::LPAREN,
+        Token::IDENT("five".to_string()),
+        Token::COMMA,
+        Token::IDENT("ten".to_string()),
+        Token::RPAREN,
+        Token::SEMICOLON,
+        Token::BANG,
+        Token::MINUS,
+        Token::SLASH,
+        Token::ASTERISK,
+        Token::INT("5".to_string()),
+        Token::SEMICOLON,
+        Token::INT("5".to_string()),
+        Token::LT,
+        Token::INT("10".to_string()),
+        Token::GT,
+        Token::INT("5".to_string()),
+        Token::SEMICOLON,
+        Token::IF,
+        Token::LPAREN,
+        Token::INT("5".to_string()),
+        Token::LT,
+        Token::INT("10".to_string()),
+        Token::RPAREN,
+        Token::LBRACE,
+        Token::RETURN,
+        Token::TRUE,
+        Token::SEMICOLON,
+        Token::RBRACE,
+        Token::ELSE,
+        Token::LBRACE,
+        Token::RETURN,
+        Token::FALSE,
+        Token::SEMICOLON,
+        Token::RBRACE,
+        Token::INT("10".to_string()),
+        Token::EQ,
+        Token::INT("10".to_string()),
+        Token::SEMICOLON,
+        Token::INT("10".to_string()),
+        Token::NOTEQ,
+        Token::INT("9".to_string()),
+        Token::SEMICOLON,
+        Token::EOF,
         ];
 
         let mut l = Lexer::new(input);
 
-        for (index, elem) in tests.iter().enumerate() {
+        for (_, elem) in tests.iter().enumerate() {
             let tok = l.next_token();
             assert_eq!(
-                elem.expected_type, tok.token_type,
-                "tests {} - tokentype wrong. expected {}, got {}",
-                index, elem.expected_type, tok.token_type
+                *elem, tok
             )
         }
     }
