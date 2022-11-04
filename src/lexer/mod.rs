@@ -78,7 +78,7 @@ impl Lexer {
                     let literal = self.read_identifier();
                     return token::lookup_ident(&literal);
                 } else if other.is_numeric() {
-                    return Token::INT(self.read_number());
+                    return Token::INT(self.read_number().parse().unwrap());
                 } else {
                     Token::ILLEGAL
                 }
@@ -151,12 +151,12 @@ mod tests {
         Token::LET,
         Token::IDENT("five".to_string()),
         Token::ASSIGN,
-        Token::INT("5".to_string()),
+        Token::INT(5),
         Token::SEMICOLON,
         Token::LET,
         Token::IDENT("ten".to_string()),
         Token::ASSIGN,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::SEMICOLON,
         Token::LET,
         Token::IDENT("add".to_string()),
@@ -188,19 +188,19 @@ mod tests {
         Token::MINUS,
         Token::SLASH,
         Token::ASTERISK,
-        Token::INT("5".to_string()),
+        Token::INT(5),
         Token::SEMICOLON,
-        Token::INT("5".to_string()),
+        Token::INT(5),
         Token::LT,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::GT,
-        Token::INT("5".to_string()),
+        Token::INT(5),
         Token::SEMICOLON,
         Token::IF,
         Token::LPAREN,
-        Token::INT("5".to_string()),
+        Token::INT(5),
         Token::LT,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::RPAREN,
         Token::LBRACE,
         Token::RETURN,
@@ -213,13 +213,13 @@ mod tests {
         Token::FALSE,
         Token::SEMICOLON,
         Token::RBRACE,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::EQ,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::SEMICOLON,
-        Token::INT("10".to_string()),
+        Token::INT(10),
         Token::NOTEQ,
-        Token::INT("9".to_string()),
+        Token::INT(9),
         Token::SEMICOLON,
         Token::EOF,
         ];
