@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use crate::token::Token;
+
 #[derive(Debug)]
 pub enum Node {
     Stat(Statement),
@@ -17,7 +19,7 @@ impl Default for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum Statement {
     Let(String, Expression),
     Return(Expression),
@@ -39,18 +41,20 @@ impl fmt::Display for Statement {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum Expression {
     Identifier(String),
+    IntegerLiteral(i32),
+    Prefix(Token, Box<Expression>)
 }
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Expression::Identifier(identifier) => {
-                return write!(f, "{}", identifier);
-            }
-        }
+        return  match self {
+            Expression::Identifier(identifier) => write!(f, "{}", identifier),
+            Expression::IntegerLiteral(x)=> write!(f, "{}", x),
+            Expression::Prefix(tok, expr)=>write!(f, "({}{})", tok, expr),
+        };
     }
 }
 
