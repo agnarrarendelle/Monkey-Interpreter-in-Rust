@@ -34,6 +34,7 @@ impl Parser {
                 Ok(stat) => program.statements.push(stat),
                 Err(err) => self.errors.push(err),
             }
+
             if(self.errors.len()!=0){
                 return Err(self.errors.clone());
             }
@@ -46,6 +47,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         match self.curr_token {
             Token::LET => self.parse_let_statements(),
+            Token::RETURN => self.parse_return_statements(),
             _ => !unreachable!(),
         }
     }
@@ -70,6 +72,15 @@ impl Parser {
         } else {
             Err(ParseError::parse_identifier_error(&self.peek_token))
         }
+    }
+
+    fn parse_return_statements(&mut self)-> Result<Statement, ParseError>{
+
+        self.next_token();
+        while !self.curr_token_is(&Token::SEMICOLON) {
+            self.next_token();
+        }
+        Ok(Statement::Return(Expression::Identifier("test".to_string())))
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
@@ -107,7 +118,6 @@ mod tests {
         let y = 10;
         let foobar = 16666;
 
-        let  = 6;
         ";
 
         let lexer = Lexer::new(input);
@@ -127,7 +137,28 @@ mod tests {
         match stat {
             Statement::Let(id, _) => {
                 assert_eq!(id, identifier_name)
-            }
+            },
+            _=>!unreachable!()
+        }
+    }
+
+    #[test]
+    fn test_return_statement(){
+        let input = "
+        return 5;
+        return 10;
+        return 993322;
+        ";
+
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        test_parser_errors(&parser);
+        let statements = program.unwrap().statements;
+        assert_eq!(statements.len(), 3);
+
+        for stat in &statements{
+            assert!(matches!(stat, Statement::Return(_)), "expected ast::Statement::Return but got {}", stat);
         }
     }
 
@@ -137,7 +168,7 @@ mod tests {
         }
 
         for e in &parser.errors{
-            println!("error: {}",e);
+            eprintln!("error: {}",e);
         }
         panic!();
     }
