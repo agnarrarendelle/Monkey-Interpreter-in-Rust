@@ -24,6 +24,7 @@ impl Default for Program {
 #[derive(Debug)]
 pub enum Statement{
     Let(String, Expression),
+    Return(Expression)
 }
 
 impl fmt::Display for Statement{
@@ -31,6 +32,9 @@ impl fmt::Display for Statement{
         match self{
             Statement::Let(identifier,expression )=>{
                 return  write!(f, "let {} = {};", identifier, expression);
+            },
+            Statement::Return(expression)=>{
+                return  write!(f, "return {};", expression);
             }
         }
     }
