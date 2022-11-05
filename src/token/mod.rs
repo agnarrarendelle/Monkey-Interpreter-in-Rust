@@ -7,7 +7,7 @@ pub enum Token  {
     EOF,
 
     IDENT(String),
-    INT(i32),
+    INT(String),
 
     ASSIGN,
     PLUS,
