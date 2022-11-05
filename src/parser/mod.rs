@@ -1,6 +1,8 @@
 use crate::{ast::*, lexer::Lexer, token::*};
 
 mod error;
+mod precedence;
+use precedence::*;
 use self::error::ParseError;
 struct Parser {
     lexer: Lexer,
@@ -48,7 +50,7 @@ impl Parser {
         match self.curr_token {
             Token::LET => self.parse_let_statements(),
             Token::RETURN => self.parse_return_statements(),
-            _ => !unreachable!(),
+            _ => self.parse_expression_statements()
         }
     }
 
@@ -81,6 +83,39 @@ impl Parser {
             self.next_token();
         }
         Ok(Statement::Return(Expression::Identifier("test".to_string())))
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence)->Result<Expression, ParseError>{
+        match &self.curr_token{
+            Token::IDENT(x)=>Ok(Expression::Identifier(x.clone())),
+            Token::INT(x)=>{
+                match x.parse::<i32>(){
+                    Ok(num)=>Ok(Expression::IntegerLiteral(num)),
+                    Err(e)=>Err(ParseError::parse_integer_error(x))
+                }
+            }
+            _=>todo!()
+        }
+
+    
+    }
+
+    fn parse_prefix_expression(&mut self)->Result<Statement, ParseError>{
+
+        todo!()
+    }
+
+    fn parse_infix_expression(&mut self, leftHand:Expression)->Result<Statement, ParseError>{
+        todo!()
+    }
+
+    fn parse_expression_statements(&mut self)->Result<Statement, ParseError>{
+        let expression = self.parse_expression(Precedence::LOWEST)?;
+        if self.peek_token_is(&Token::SEMICOLON){
+            self.next_token();
+        }
+
+        Ok(Statement::Expression(expression))
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
@@ -159,6 +194,46 @@ mod tests {
 
         for stat in &statements{
             assert!(matches!(stat, Statement::Return(_)), "expected ast::Statement::Return but got {}", stat);
+        }
+    }
+
+    #[test]
+    fn test_identifier_expression(){
+        let input = "foobar;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        test_parser_errors(&parser);
+        let statements = program.unwrap().statements;
+        assert_eq!(statements.len(),1);
+        assert!(matches!(statements[0], Statement::Expression(_)), "expected Expression Statemnet but got {}", statements[0]);
+        match &statements[0]{
+            Statement::Expression(Expr)=>{
+                if let Expression::Identifier(x) = Expr{
+                    assert_eq!(x, "foobar")
+                }
+            },
+            _=>!unreachable!()
+        }
+    }
+
+    #[test]
+    fn test_integer_literal_expression(){
+        let input = "5";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        test_parser_errors(&parser);
+        let statements = program.unwrap().statements;
+        assert_eq!(statements.len(),1);
+        assert!(matches!(statements[0], Statement::Expression(_)), "expected Expression Statemnet but got {}", statements[0]);
+        match &statements[0]{
+            Statement::Expression(Expr)=>{
+                if let Expression::IntegerLiteral(x) = Expr{
+                    assert_eq!(*x,5);
+                }
+            },
+            _=>!unreachable!()
         }
     }
 
