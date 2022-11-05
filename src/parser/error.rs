@@ -29,4 +29,7 @@ impl ParseError{
     pub fn parse_next_token_error(expect: &token::Token, actual:&token::Token)->Self{
         Self::new(format!("Expected token to be {} but got {}", expect, actual) )
     }
+    pub fn parse_integer_error(num:&str)->Self{
+        Self::new(format!("Cannot parse {} into integer", num) )
+    }
 }
