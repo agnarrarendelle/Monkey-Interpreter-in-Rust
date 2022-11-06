@@ -45,15 +45,19 @@ impl fmt::Display for Statement {
 pub enum Expression {
     Identifier(String),
     IntegerLiteral(i32),
-    Prefix(Token, Box<Expression>)
+    Prefix(Token, Box<Expression>),
+    Infix(Box<Expression>, Token, Box<Expression>),
 }
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return  match self {
+        return match self {
             Expression::Identifier(identifier) => write!(f, "{}", identifier),
-            Expression::IntegerLiteral(x)=> write!(f, "{}", x),
-            Expression::Prefix(tok, expr)=>write!(f, "({}{})", tok, expr),
+            Expression::IntegerLiteral(x) => write!(f, "{}", x),
+            Expression::Prefix(tok, expr) => write!(f, "({}{})", tok, expr),
+            Expression::Infix(left_expr, tok, right_expr) => {
+                write!(f, "({}{}{})", left_expr, tok, right_expr)
+            }
         };
     }
 }
