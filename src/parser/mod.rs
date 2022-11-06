@@ -275,6 +275,49 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_parsing_infix_expressions(){
+        let expressions = [
+            ("5+5;", "5", "+", "5", "(5+5)"),
+            ("5-5;", "5", "-", "5", "(5-5)"),
+            ("5*5;", "5", "*", "5", "(5*5)"),
+            ("5/5;", "5", "/", "5", "(5/5)"),
+            ("5>5;", "5", ">", "5", "(5>5)"),
+            ("5<5;", "5", "<", "5", "(5<5)"),
+            ("5==5;", "5", "==", "5", "(5==5)"),
+            ("5!=5;", "5", "!=", "5", "(5!=5)"),
+        ];
+
+        for expr in expressions{
+            for expr in expressions{
+                let lexer = Lexer::new(expr.0);
+                let mut parser = Parser::new(lexer);
+                let program = parser.parse_program();
+                test_parser_errors(&parser);
+                let statements = program.unwrap().statements;
+                assert_eq!(statements.len(),1);
+                match &statements[0]{
+                    Statement::Expression(expression)=>{
+                        match expression {
+                            Expression::Infix(left_expr,tok, right_expr)=>{
+                                let actual_expr = format!("{}", expression);
+                                let actual_left = format!("{}", left_expr);
+                                let actual_tok = format!("{}", tok);
+                                let actual_right = format!("{}", right_expr);
+                                assert_eq!(actual_left, expr.1);
+                                assert_eq!(actual_tok, expr.2);
+                                assert_eq!(actual_right, expr.3);
+                                assert_eq!(actual_expr, expr.4);
+                            },
+                            _=>panic!("not infix expression")
+                        }
+                    }
+                    _=>panic!("not expression")
+                }
+            }
+        }
+    }
+
     fn test_parser_errors(parser: &Parser) {
         if parser.errors.len() == 0 {
             return;
