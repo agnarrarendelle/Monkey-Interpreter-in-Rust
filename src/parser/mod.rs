@@ -93,19 +93,24 @@ impl Parser {
                     Ok(num)=>Ok(Expression::IntegerLiteral(num)),
                     Err(e)=>Err(ParseError::parse_integer_error(x))
                 }
-            }
+            },
+            Token::BANG | Token::MINUS=>self.parse_prefix_expression(),
             _=>todo!()
         }
 
     
     }
 
-    fn parse_prefix_expression(&mut self)->Result<Statement, ParseError>{
+    fn parse_prefix_expression(&mut self)->Result<Expression, ParseError>{
 
-        todo!()
+        let curr_tok = self.curr_token.clone();
+        self.next_token();
+        let expr = self.parse_expression(Precedence::PREFIX)?;
+
+        Ok(Expression::Prefix(curr_tok, Box::new(expr)))
     }
 
-    fn parse_infix_expression(&mut self, leftHand:Expression)->Result<Statement, ParseError>{
+    fn parse_infix_expression(&mut self, leftHand:Expression)->Result<Expression, ParseError>{
         todo!()
     }
 
@@ -219,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_integer_literal_expression(){
-        let input = "5";
+        let input = "5;";
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
@@ -234,6 +239,39 @@ mod tests {
                 }
             },
             _=>!unreachable!()
+        }
+    }
+
+    #[test]
+    fn test_parsing_prefix_expressions(){
+        let expressions = [
+            ("!5;", "!", "5", "(!5)"),
+            ("-15;", "-", "15", "(-15)"),
+        ];
+
+        for expr in expressions{
+            let lexer = Lexer::new(expr.0);
+            let mut parser = Parser::new(lexer);
+            let program = parser.parse_program();
+            test_parser_errors(&parser);
+            let statements = program.unwrap().statements;
+            assert_eq!(statements.len(),1);
+            match &statements[0]{
+                Statement::Expression(expression)=>{
+                    match expression {
+                        Expression::Prefix(tok, rightExpr)=>{
+                            let actual_expr = format!("{}", expression);
+                            let actual_tok = format!("{}", tok);
+                            let actual_right_expr = format!("{}", rightExpr);
+                            assert_eq!(actual_tok, expr.1);
+                            assert_eq!(actual_right_expr, expr.2);
+                            assert_eq!(actual_expr, expr.3);
+                        },
+                        _=>panic!("not prefix expression")
+                    }
+                }
+                _=>panic!("not expression")
+            }
         }
     }
 
