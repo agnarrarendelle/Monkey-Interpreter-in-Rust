@@ -112,6 +112,7 @@ impl Parser {
                 Ok(num) => Ok(Expression::Literal(Literal::Integer(num))),
                 Err(e) => Err(ParseError::parse_integer_error(x)),
             },
+            Token::BOOLEAN(b)=>Ok(Expression::Literal(Literal::Bool(*b))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             _ => todo!(),
         };
@@ -240,6 +241,13 @@ mod tests {
     #[test]
     fn test_integer_literal_expression() {
         let test_cases = vec![("5;", "5"), ("-15;", "(-15)")];
+
+        test_helper(&test_cases);
+    }
+
+    #[test]
+    fn test_boolean_literal_expression() {
+        let test_cases = vec![("true;", "true"), ("false;", "false"), ("let foo = true;", "let foo = true;")];
 
         test_helper(&test_cases);
     }
