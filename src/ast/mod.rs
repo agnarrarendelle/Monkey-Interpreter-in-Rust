@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt::{self, Display, format};
 
 use crate::token::Token;
 
@@ -16,6 +16,18 @@ pub struct Program {
 impl Default for Program {
     fn default() -> Self {
         Self { statements: vec![] }
+    }
+}
+
+impl fmt::Display for Program{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut res = String::new();
+        for stat in &self.statements{
+            let stat_str = format!("{}",stat);
+            res.push_str(&stat_str);
+        }
+
+        return  write!(f, "{}", res);
     }
 }
 
