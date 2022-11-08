@@ -45,12 +45,13 @@ impl Parser {
                 Err(err) => self.errors.push(err),
             }
 
-            if (self.errors.len() != 0) {
-                return Err(self.errors.clone());
-            }
+            
             self.next_token();
         }
 
+        if self.errors.len() != 0 {
+            return Err(self.errors.clone());
+        }
         Ok(program)
     }
 
@@ -58,6 +59,7 @@ impl Parser {
         match self.curr_token {
             Token::LET => self.parse_let_statements(),
             Token::RETURN => self.parse_return_statements(),
+            Token::ILLEGAL=>Err(ParseError::illegal_token_error()),
             _ => self.parse_expression_statements(),
         }
     }
@@ -107,7 +109,7 @@ impl Parser {
         let mut left_expr = match &self.curr_token {
             Token::IDENT(x) => Ok(Expression::Identifier(x.clone())),
             Token::INT(x) => match x.parse::<i32>() {
-                Ok(num) => Ok(Expression::IntegerLiteral(num)),
+                Ok(num) => Ok(Expression::Literal(Literal::Integer(num))),
                 Err(e) => Err(ParseError::parse_integer_error(x)),
             },
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
@@ -196,6 +198,7 @@ mod tests {
                     for e in errors {
                         println!("{}", e);
                     }
+                    panic!()
                 }
             }
         }
