@@ -45,7 +45,6 @@ impl Parser {
                 Err(err) => self.errors.push(err),
             }
 
-            
             self.next_token();
         }
 
@@ -59,7 +58,7 @@ impl Parser {
         match self.curr_token {
             Token::LET => self.parse_let_statements(),
             Token::RETURN => self.parse_return_statements(),
-            Token::ILLEGAL=>Err(ParseError::illegal_token_error()),
+            Token::ILLEGAL => Err(ParseError::illegal_token_error()),
             _ => self.parse_expression_statements(),
         }
     }
@@ -110,10 +109,11 @@ impl Parser {
             Token::IDENT(x) => Ok(Expression::Identifier(x.clone())),
             Token::INT(x) => match x.parse::<i32>() {
                 Ok(num) => Ok(Expression::Literal(Literal::Integer(num))),
-                Err(e) => Err(ParseError::parse_integer_error(x)),
+                Err(_) => Err(ParseError::parse_integer_error(x)),
             },
-            Token::BOOLEAN(b)=>Ok(Expression::Literal(Literal::Bool(*b))),
+            Token::BOOLEAN(b) => Ok(Expression::Literal(Literal::Bool(*b))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
+            Token::LPAREN=>self.parse_group_expression(),
             _ => todo!(),
         };
 
@@ -156,6 +156,13 @@ impl Parser {
             operand,
             Box::new(right_expr),
         ))
+    }
+
+    fn parse_group_expression(&mut self)-> Result<Expression, ParseError>{
+        self.next_token();
+        let expression = self.parse_expression(Precedence::LOWEST)?;
+        self.expect_peek_token(&Token::RPAREN)?;
+        Ok(expression)
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
@@ -247,7 +254,14 @@ mod tests {
 
     #[test]
     fn test_boolean_literal_expression() {
-        let test_cases = vec![("true;", "true"), ("false;", "false"), ("let foo = true;", "let foo = true;")];
+        let test_cases = vec![
+            ("true;", "true"),
+            ("false;", "false"),
+            ("let foo = true;", "let foo = true;"),
+            ("3 > 5 == false","((3>5)==false)"),
+            ("!true", "(!true)"),
+            ("!!false", "(!(!false))")
+        ];
 
         test_helper(&test_cases);
     }
@@ -291,9 +305,10 @@ mod tests {
             ("5 < 4 != 3 > 4", "((5<4)!=(3>4))"),
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
+            ("(3+4)*2", "((3+4)*2)"),
+            ("4*(4/2)", "(4*(4/2))")
         ];
 
         test_helper(&test_cases);
     }
-
 }
