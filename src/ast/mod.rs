@@ -56,7 +56,7 @@ impl fmt::Display for Statement {
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Expression {
     Identifier(String),
-    IntegerLiteral(i32),
+    Literal(Literal),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
 }
@@ -65,7 +65,7 @@ impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
             Expression::Identifier(identifier) => write!(f, "{}", identifier),
-            Expression::IntegerLiteral(x) => write!(f, "{}", x),
+            Expression::Literal(x) => write!(f, "{}", x),
             Expression::Prefix(tok, expr) => write!(f, "({}{})", tok, expr),
             Expression::Infix(left_expr, tok, right_expr) => {
                 write!(f, "({}{}{})", left_expr, tok, right_expr)
@@ -89,5 +89,20 @@ mod tests {
 
         let result = format!("{}", letStatement);
         assert_eq!(result, "let myVar = anotherVar;");
+    }
+}
+
+#[derive(Debug, PartialEq, PartialOrd)]
+pub enum Literal{
+    Integer(i32),
+    Bool(bool),
+}
+
+impl fmt::Display for Literal{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer(int)=>write!(f, "{}",int),
+            Self::Bool(bool)=>write!(f, "{}",bool)
+        }
     }
 }
