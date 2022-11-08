@@ -11,6 +11,14 @@ struct Parser {
     errors: Vec<ParseError>,
 }
 
+pub fn start_parsing(input: &str) -> Result<Program, Vec<ParseError>> {
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program()?;
+
+    Ok(program)
+}
+
 impl Parser {
     pub fn new(mut lexer: Lexer) -> Self {
         let curr_token = lexer.next_token();
@@ -22,14 +30,6 @@ impl Parser {
             peek_token,
             errors,
         }
-    }
-
-    pub fn start_parsing(input: &str)->Result<Program, Vec<ParseError>>{
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program()?;
-
-        Ok(program)
     }
 
     fn next_token(&mut self) {
@@ -71,14 +71,13 @@ impl Parser {
             self.expect_peek_token(&Token::ASSIGN)?;
             self.next_token();
 
-            while !self.curr_token_is(&Token::SEMICOLON) {
+            let expression = self.parse_expression(Precedence::LOWEST)?;
+
+            if !self.curr_token_is(&Token::SEMICOLON) {
                 self.next_token();
             }
 
-            Ok(Statement::Let(
-                identifier.clone(),
-                Expression::Identifier("test".to_string()),
-            ))
+            Ok(Statement::Let(identifier.clone(), expression))
         } else {
             Err(ParseError::parse_identifier_error(&self.peek_token))
         }
@@ -86,12 +85,13 @@ impl Parser {
 
     fn parse_return_statements(&mut self) -> Result<Statement, ParseError> {
         self.next_token();
-        while !self.curr_token_is(&Token::SEMICOLON) {
+        let expression = self.parse_expression(Precedence::LOWEST)?;
+
+        if !self.curr_token_is(&Token::SEMICOLON) {
             self.next_token();
         }
-        Ok(Statement::Return(Expression::Identifier(
-            "test".to_string(),
-        )))
+
+        Ok(Statement::Return(expression))
     }
 
     fn parse_expression_statements(&mut self) -> Result<Statement, ParseError> {
@@ -155,8 +155,6 @@ impl Parser {
         ))
     }
 
-    
-
     fn curr_token_is(&self, token_type: &Token) -> bool {
         self.curr_token == *token_type
     }
@@ -187,221 +185,104 @@ mod tests {
 
     use super::*;
 
-    
-    #[test]
-    fn test() {
-        let input = "
-        
-        let x = 5;
-        let y = 10;
-        let foobar = 16666;
-
-        ";
-
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        test_parser_errors(&parser);
-        let statements = program.unwrap().statements;
-        assert_eq!(statements.len(), 3);
-        let identifiers = vec!["x", "y", "foobar"];
-        for (index, stat) in statements.iter().enumerate() {
-            test_let_statement(stat, identifiers[index]);
+    fn test_helper(cases: &Vec<(&str, &str)>) {
+        for (input, expected) in cases {
+            match start_parsing(input) {
+                Ok(program) => {
+                    assert_eq!(*expected, &format!("{}", program))
+                }
+                Err(errors) => {
+                    println!("Errors: ");
+                    for e in errors {
+                        println!("{}", e);
+                    }
+                }
+            }
         }
     }
 
-    fn test_let_statement(stat: &Statement, identifier_name: &str) {
-        matches!(stat, Statement::Let(_, _));
-        match stat {
-            Statement::Let(id, _) => {
-                assert_eq!(id, identifier_name)
-            }
-            _ => !unreachable!(),
-        }
+    #[test]
+    fn test_let_statement() {
+        let test_cases = vec![
+            ("let x = 5;", "let x = 5;"),
+            ("let y = 10;", "let y = 10;"),
+            ("let foobar = 16666;", "let foobar = 16666;"),
+        ];
+
+        test_helper(&test_cases);
     }
 
     #[test]
     fn test_return_statement() {
-        let input = "
-        return 5;
-        return 10;
-        return 993322;
-        ";
+        let test_cases = vec![
+            ("return 5;", "return 5;"),
+            ("return -5;", "return (-5);"),
+            ("return foo;", "return foo;"),
+        ];
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        test_parser_errors(&parser);
-        let statements = program.unwrap().statements;
-        assert_eq!(statements.len(), 3);
-
-        for stat in &statements {
-            assert!(
-                matches!(stat, Statement::Return(_)),
-                "expected ast::Statement::Return but got {}",
-                stat
-            );
-        }
+        test_helper(&test_cases);
     }
 
     #[test]
     fn test_identifier_expression() {
-        let input = "foobar;";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        test_parser_errors(&parser);
-        let statements = program.unwrap().statements;
-        assert_eq!(statements.len(), 1);
-        assert!(
-            matches!(statements[0], Statement::Expression(_)),
-            "expected Expression Statemnet but got {}",
-            statements[0]
-        );
-        match &statements[0] {
-            Statement::Expression(Expr) => {
-                if let Expression::Identifier(x) = Expr {
-                    assert_eq!(x, "foobar")
-                }
-            }
-            _ => !unreachable!(),
-        }
+        let test_cases = vec![
+            ("foo;", "foo"),
+            ("foo_bar;", "foo_bar"),
+            ("123_test;", "123_test"),
+        ];
+
+        test_helper(&test_cases);
     }
 
     #[test]
     fn test_integer_literal_expression() {
-        let input = "5;";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        test_parser_errors(&parser);
-        let statements = program.unwrap().statements;
-        assert_eq!(statements.len(), 1);
-        assert!(
-            matches!(statements[0], Statement::Expression(_)),
-            "expected Expression Statemnet but got {}",
-            statements[0]
-        );
-        match &statements[0] {
-            Statement::Expression(Expr) => {
-                if let Expression::IntegerLiteral(x) = Expr {
-                    assert_eq!(*x, 5);
-                }
-            }
-            _ => !unreachable!(),
-        }
+        let test_cases = vec![("5;", "5"), ("-15;", "(-15)")];
+
+        test_helper(&test_cases);
     }
 
     #[test]
     fn test_parsing_prefix_expressions() {
-        let expressions = [("!5;", "!", "5", "(!5)"), ("-15;", "-", "15", "(-15)")];
+        let test_cases = vec![("!5;", "(!5)"), ("-15;", "(-15)")];
 
-        for expr in expressions {
-            let lexer = Lexer::new(expr.0);
-            let mut parser = Parser::new(lexer);
-            let program = parser.parse_program();
-            test_parser_errors(&parser);
-            let statements = program.unwrap().statements;
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Statement::Expression(expression) => match expression {
-                    Expression::Prefix(tok, rightExpr) => {
-                        let actual_expr = format!("{}", expression);
-                        let actual_tok = format!("{}", tok);
-                        let actual_right_expr = format!("{}", rightExpr);
-                        assert_eq!(actual_tok, expr.1);
-                        assert_eq!(actual_right_expr, expr.2);
-                        assert_eq!(actual_expr, expr.3);
-                    }
-                    _ => panic!("not prefix expression"),
-                },
-                _ => panic!("not expression"),
-            }
-        }
+        test_helper(&test_cases);
     }
 
     #[test]
     fn test_parsing_infix_expressions() {
-        let expressions = [
-            ("5+5;", "5", "+", "5", "(5+5)"),
-            ("5-5;", "5", "-", "5", "(5-5)"),
-            ("5*5;", "5", "*", "5", "(5*5)"),
-            ("5/5;", "5", "/", "5", "(5/5)"),
-            ("5>5;", "5", ">", "5", "(5>5)"),
-            ("5<5;", "5", "<", "5", "(5<5)"),
-            ("5==5;", "5", "==", "5", "(5==5)"),
-            ("5!=5;", "5", "!=", "5", "(5!=5)"),
+        let test_cases = vec![
+            ("5+5;", "(5+5)"),
+            ("5-5;", "(5-5)"),
+            ("5*5;", "(5*5)"),
+            ("5/5;", "(5/5)"),
+            ("5>5;", "(5>5)"),
+            ("5<5;", "(5<5)"),
+            ("5==5;", "(5==5)"),
+            ("5!=5;", "(5!=5)"),
         ];
 
-        for expr in expressions {
-            let lexer = Lexer::new(expr.0);
-            let mut parser = Parser::new(lexer);
-            let program = parser.parse_program();
-            test_parser_errors(&parser);
-            let statements = program.unwrap().statements;
-            assert_eq!(statements.len(), 1);
-            match &statements[0] {
-                Statement::Expression(expression) => match expression {
-                    Expression::Infix(left_expr, tok, right_expr) => {
-                        let actual_expr = format!("{}", expression);
-                        let actual_left = format!("{}", left_expr);
-                        let actual_tok = format!("{}", tok);
-                        let actual_right = format!("{}", right_expr);
-                        assert_eq!(actual_left, expr.1);
-                        assert_eq!(actual_tok, expr.2);
-                        assert_eq!(actual_right, expr.3);
-                        assert_eq!(actual_expr, expr.4);
-                    }
-                    _ => panic!("not infix expression"),
-                },
-                _ => panic!("not expression"),
-            }
-        }
+        test_helper(&test_cases);
     }
 
     #[test]
-    fn test_operator_precedence_parsing(){
-        let tests = [
-            ("-a * b","((-a)*b)"),
-            ("!-a","(!(-a))"),
-            ("a + b + c","((a+b)+c)"),
-            ("a + b - c","((a+b)-c)"),
-            ("a * b * c","((a*b)*c)"),
-            ("a * b / c","((a*b)/c)"),
-            ("a + b / c","(a+(b/c))"),
-            ("a + b * c + d / e - f","(((a+(b*c))+(d/e))-f)"),
-            ("3 + 4; -5 * 5","(3+4)((-5)*5)"),
-            ("5 > 4 == 3 < 4","((5>4)==(3<4))"),
-            ("5 < 4 != 3 > 4","((5<4)!=(3>4))"),
-            ("3 + 4 * 5 == 3 * 1 + 4 * 5","((3+(4*5))==((3*1)+(4*5)))"),
-            ("3 + 4 * 5 == 3 * 1 + 4 * 5","((3+(4*5))==((3*1)+(4*5)))"),
+    fn test_operator_precedence_parsing() {
+        let test_cases = vec![
+            ("-a * b", "((-a)*b)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a+b)+c)"),
+            ("a + b - c", "((a+b)-c)"),
+            ("a * b * c", "((a*b)*c)"),
+            ("a * b / c", "((a*b)/c)"),
+            ("a + b / c", "(a+(b/c))"),
+            ("a + b * c + d / e - f", "(((a+(b*c))+(d/e))-f)"),
+            ("3 + 4; -5 * 5", "(3+4)((-5)*5)"),
+            ("5 > 4 == 3 < 4", "((5>4)==(3<4))"),
+            ("5 < 4 != 3 > 4", "((5<4)!=(3>4))"),
+            ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
+            ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
         ];
 
-        for test in tests{
-            let lexer = Lexer::new(test.0);
-            let mut parser = Parser::new(lexer);
-            let program = parser.parse_program();
-            test_parser_errors(&parser);
-            let program = program.unwrap();
-            assert_eq!(format!("{}", program), test.1);
-            // match &statements[0]{
-            //     Statement::Expression(expression)=>{
-            //         let actual_expr = format!("{}", expression);
-            //         assert_eq!(test.1, actual_expr)
-            //     },
-            //     _=>panic!("not expression")
-            // }
-        }
+        test_helper(&test_cases);
     }
 
-    fn test_parser_errors(parser: &Parser) {
-        if parser.errors.len() == 0 {
-            return;
-        }
-
-        for e in &parser.errors {
-            eprintln!("error: {}", e);
-        }
-        panic!();
-    }
 }
