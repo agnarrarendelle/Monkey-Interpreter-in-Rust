@@ -7,8 +7,9 @@ pub enum Token  {
     EOF,
 
     IDENT(String),
-    INT(String),
 
+    INT(String),
+    BOOLEAN(bool),
     ASSIGN,
     PLUS,
     MINUS,
@@ -32,8 +33,6 @@ pub enum Token  {
 
     FUNCTION,
     LET,
-    TRUE,
-    FALSE,
     IF,
     ELSE,
     RETURN,
@@ -45,8 +44,8 @@ pub fn lookup_ident(ident: &str) -> Token {
     match ident {
         "fn" => Token::FUNCTION,
         "let" => Token::LET,
-        "true" => Token::TRUE,
-        "false" => Token::FALSE,
+        "true" => Token::BOOLEAN(true),
+        "false" => Token::BOOLEAN(false),
         "if" => Token::IF,
         "else" => Token::ELSE,
         "return" => Token::RETURN,
@@ -59,6 +58,7 @@ impl fmt::Display for Token {
         match self {
             Token::IDENT(id) => write!(f, "{}", id),
             Token::INT(i) => write!(f, "{}", i),
+            Token::BOOLEAN(b) => write!(f, "{}", b),
             Token::ASSIGN => write!(f, "="),
             Token::PLUS => write!(f, "+"),
             Token::MINUS => write!(f, "-"),
@@ -80,8 +80,6 @@ impl fmt::Display for Token {
             Token::RETURN => write!(f, "return"),
             Token::IF => write!(f, "if"),
             Token::ELSE => write!(f, "else"),
-            Token::TRUE=>write!(f, "TRUE"),
-            Token::FALSE=>write!(f, "FALSE"),
             Token::EOF=>write!(f, "EOF"),
             Token::ILLEGAL => write!(f, "invalid token"),
         }
