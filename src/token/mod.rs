@@ -1,7 +1,7 @@
 use std::{fmt, ops::Deref};
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
 pub enum Token  {
     ILLEGAL,
     EOF,
