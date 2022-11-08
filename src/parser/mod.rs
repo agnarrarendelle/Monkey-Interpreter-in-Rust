@@ -24,6 +24,14 @@ impl Parser {
         }
     }
 
+    pub fn start_parsing(input: &str)->Result<Program, Vec<ParseError>>{
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program()?;
+
+        Ok(program)
+    }
+
     fn next_token(&mut self) {
         self.curr_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token();
@@ -179,6 +187,7 @@ mod tests {
 
     use super::*;
 
+    
     #[test]
     fn test() {
         let input = "
