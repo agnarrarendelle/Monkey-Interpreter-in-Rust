@@ -32,4 +32,8 @@ impl ParseError{
     pub fn parse_integer_error(num:&str)->Self{
         Self::new(format!("Cannot parse {} into integer", num) )
     }
+
+    pub fn illegal_token_error()->Self{
+        Self::new(format!("Cannot parse illegal token") )
+    }
 }
