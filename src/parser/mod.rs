@@ -114,6 +114,7 @@ impl Parser {
             Token::BOOLEAN(b) => Ok(Expression::Literal(Literal::Bool(*b))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             Token::LPAREN=>self.parse_group_expression(),
+            Token::IF=>self.parse_if_expression(),
             _ => todo!(),
         };
 
@@ -165,6 +166,35 @@ impl Parser {
         Ok(expression)
     }
 
+    fn parse_if_expression(&mut self)-> Result<Expression, ParseError>{
+        self.expect_peek_token(&Token::LPAREN)?;
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST)?;
+        self.expect_peek_token(&Token::RPAREN)?;
+        self.expect_peek_token(&Token::LBRACE)?;
+        let consequence = self.parse_block_statements()?;
+        let mut alternative = Option::None;
+        if self.peek_token_is(&Token::ELSE){
+            self.next_token();
+            self.expect_peek_token(&Token::LBRACE)?;
+            alternative = Some(self.parse_block_statements()?);
+        }
+
+        Ok(Expression::IfExpr(Box::new(condition), consequence, alternative))
+
+    }
+
+    fn parse_block_statements(&mut self)-> Result<BlockStatement, ParseError>{
+        let mut statements = vec![];
+        self.next_token();
+        while !self.curr_token_is(&Token::RBRACE) && !self.curr_token_is(&Token::EOF){
+            let stat = self.parse_statement()?;
+            statements.push(stat);
+            self.next_token();
+        };
+        Ok(BlockStatement(statements))
+    }
+
     fn curr_token_is(&self, token_type: &Token) -> bool {
         self.curr_token == *token_type
     }
@@ -174,7 +204,7 @@ impl Parser {
     }
 
     fn expect_peek_token(&mut self, token_type: &Token) -> Result<(), ParseError> {
-        if (self.peek_token_is(token_type)) {
+        if self.peek_token_is(token_type) {
             self.next_token();
             Ok(())
         } else {
@@ -307,6 +337,16 @@ mod tests {
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
             ("(3+4)*2", "((3+4)*2)"),
             ("4*(4/2)", "(4*(4/2))")
+        ];
+
+        test_helper(&test_cases);
+    }
+
+    #[test]
+    fn test_if_else_block(){
+        let test_cases = vec![
+            ("if(x<y){x};", "if (x<y) { x }"),
+            ("if ( x < y ) { x } else { y }", "if (x<y) { x } else { y }")
         ];
 
         test_helper(&test_cases);
