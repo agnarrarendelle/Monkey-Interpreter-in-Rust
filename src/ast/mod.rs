@@ -1,6 +1,6 @@
-use std::fmt::{self, Display, format};
-
 use crate::token::Token;
+use std::fmt::{self, format, Display};
+use std::vec;
 
 #[derive(Debug)]
 pub enum Node {
@@ -19,15 +19,15 @@ impl Default for Program {
     }
 }
 
-impl fmt::Display for Program{
+impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut res = String::new();
-        for stat in &self.statements{
-            let stat_str = format!("{}",stat);
+        for stat in &self.statements {
+            let stat_str = format!("{}", stat);
             res.push_str(&stat_str);
         }
 
-        return  write!(f, "{}", res);
+        return write!(f, "{}", res);
     }
 }
 
@@ -36,6 +36,19 @@ pub enum Statement {
     Let(String, Expression),
     Return(Expression),
     Expression(Expression),
+}
+
+#[derive(Debug, PartialEq, PartialOrd)]
+pub struct BlockStatement(pub Vec<Statement>);
+impl fmt::Display for BlockStatement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut res = String::new();
+        for stat in &self.0 {
+            res.push_str(&format!("{}", stat))
+        }
+
+        return write!(f, "{}", res);
+    }
 }
 
 impl fmt::Display for Statement {
@@ -59,6 +72,7 @@ pub enum Expression {
     Literal(Literal),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
+    IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
 }
 
 impl fmt::Display for Expression {
@@ -69,6 +83,20 @@ impl fmt::Display for Expression {
             Expression::Prefix(tok, expr) => write!(f, "({}{})", tok, expr),
             Expression::Infix(left_expr, tok, right_expr) => {
                 write!(f, "({}{}{})", left_expr, tok, right_expr)
+            }
+            Expression::IfExpr(condition, consequence, alternative) => {
+                let condition_expr = format!("{}", condition);
+                let consequence_expr = format!("{}", consequence);
+                return match alternative {
+                    Some(alter) => {
+                        write!(
+                            f,
+                            "if {} {{ {} }} else {{ {} }}",
+                            condition_expr, consequence_expr, alter
+                        )
+                    }
+                    None => write!(f, "if {} {{ {} }}", condition_expr, consequence_expr),
+                };
             }
         };
     }
@@ -93,16 +121,16 @@ mod tests {
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
-pub enum Literal{
+pub enum Literal {
     Integer(i32),
     Bool(bool),
 }
 
-impl fmt::Display for Literal{
+impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Integer(int)=>write!(f, "{}",int),
-            Self::Bool(bool)=>write!(f, "{}",bool)
+            Self::Integer(int) => write!(f, "{}", int),
+            Self::Bool(bool) => write!(f, "{}", bool),
         }
     }
 }
