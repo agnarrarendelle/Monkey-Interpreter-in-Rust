@@ -73,7 +73,8 @@ pub enum Expression {
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
     IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
-    Func(Option<Vec<String>>, BlockStatement)
+    Func(Option<Vec<String>>, BlockStatement),
+    FuncCall(Box<Expression>, Vec<Expression>)
 }
 
 impl fmt::Display for Expression {
@@ -105,28 +106,15 @@ impl fmt::Display for Expression {
                         write!(f, "fn({}) {{ {} }}", params.join(", "), body)
                     }None=>write!(f, "fn() {{ {} }}", body)
                 }
+            },
+            Expression::FuncCall(expression, arguments)=>{
+                write!(f, "{}({})", expression, format_expressions(&arguments))
             }
         };
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::fmt::write;
 
-    use super::*;
-
-    #[test]
-    fn test_string() {
-        let letStatement = Statement::Let(
-            "myVar".to_string(),
-            Expression::Identifier("anotherVar".to_string()),
-        );
-
-        let result = format!("{}", letStatement);
-        assert_eq!(result, "let myVar = anotherVar;");
-    }
-}
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Literal {
@@ -141,4 +129,9 @@ impl fmt::Display for Literal {
             Self::Bool(bool) => write!(f, "{}", bool),
         }
     }
+}
+
+fn format_expressions(expressions:&Vec<Expression>)->String{
+    let exprs = expressions.iter().map(|expr| expr.to_string());
+    return  exprs.collect::<Vec<String>>().join(", ");
 }
