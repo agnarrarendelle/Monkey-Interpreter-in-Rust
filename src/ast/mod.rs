@@ -73,6 +73,7 @@ pub enum Expression {
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
     IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
+    Func(Option<Vec<String>>, BlockStatement)
 }
 
 impl fmt::Display for Expression {
@@ -97,6 +98,13 @@ impl fmt::Display for Expression {
                     }
                     None => write!(f, "if {} {{ {} }}", condition_expr, consequence_expr),
                 };
+            },
+            Expression::Func(params, body)=>{
+                match params {
+                    Some(params)=>{
+                        write!(f, "fn({}) {{ {} }}", params.join(", "), body)
+                    }None=>write!(f, "fn() {{ {} }}", body)
+                }
             }
         };
     }

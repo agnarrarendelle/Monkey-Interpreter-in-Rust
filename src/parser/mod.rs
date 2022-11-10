@@ -115,6 +115,7 @@ impl Parser {
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             Token::LPAREN=>self.parse_group_expression(),
             Token::IF=>self.parse_if_expression(),
+            Token::FUNCTION=>self.parse_function_expression(),
             _ => todo!(),
         };
 
@@ -193,6 +194,50 @@ impl Parser {
             self.next_token();
         };
         Ok(BlockStatement(statements))
+    }
+
+    fn parse_function_expression(&mut self)-> Result<Expression, ParseError>{
+        self.expect_peek_token(&Token::LPAREN)?;
+
+        let params = self.parse_function_parameter()?;
+        self.expect_peek_token(&Token::LBRACE);
+        
+        let body = self.parse_block_statements()?;
+
+        let expr =  match params {
+            Some(params)=>Expression::Func(Some(params), body),
+            None=>Expression::Func(None, body)
+        };
+
+        Ok(expr)
+    }
+
+    fn parse_function_parameter(&mut self)->Result<Option<Vec<String>>, ParseError>{
+        if self.peek_token_is(&Token::RPAREN){
+            self.next_token();
+            return Ok(None);
+        }
+        let mut identifiers = vec![];
+        self.next_token();
+
+        match &self.curr_token{
+            Token::IDENT(id)=>identifiers.push(id.clone()),
+            other=>return Err(ParseError::parse_identifier_error(other))
+        }
+
+        while self.peek_token_is(&Token::COMMA){
+            self.next_token();
+            self.next_token();
+
+            match &self.curr_token{
+                Token::IDENT(id)=>identifiers.push(id.clone()),
+                other=>return Err(ParseError::parse_identifier_error(other))
+            }
+        }
+
+        self.expect_peek_token(&Token::RPAREN)?;
+
+        Ok(Some(identifiers))
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
@@ -347,6 +392,17 @@ mod tests {
         let test_cases = vec![
             ("if(x<y){x};", "if (x<y) { x }"),
             ("if ( x < y ) { x } else { y }", "if (x<y) { x } else { y }")
+        ];
+
+        test_helper(&test_cases);
+    }
+
+    #[test]
+    fn test_func_paramater_parsing(){
+        let test_cases=vec![
+            ("fn() {};", "fn() {  }"),
+            ("fn(x) {};", "fn(x) {  }"),
+            ("fn(x,y,z) {};", "fn(x, y, z) {  }"),
         ];
 
         test_helper(&test_cases);
