@@ -4,7 +4,7 @@ mod error;
 mod precedence;
 use self::error::ParseError;
 use precedence::*;
-struct Parser {
+pub struct Parser {
     lexer: Lexer,
     curr_token: Token,
     peek_token: Token,
@@ -131,6 +131,10 @@ impl Parser {
                 | Token::GT => {
                     self.next_token();
                     left_expr = self.parse_infix_expression(left_expr.unwrap());
+                },
+                Token::LPAREN=>{
+                    self.next_token();
+                    left_expr = self.parse_func_call_expression(left_expr.unwrap())
                 }
                 _ => todo!(),
             }
@@ -238,6 +242,28 @@ impl Parser {
         self.expect_peek_token(&Token::RPAREN)?;
 
         Ok(Some(identifiers))
+    }
+
+    fn parse_func_call_expression(&mut self, expression:Expression)-> Result<Expression, ParseError>{
+        let args = self.parse_func_call_arguments()?;
+        Ok(Expression::FuncCall(Box::new(expression), args))
+    }
+
+    fn parse_func_call_arguments(&mut self)->Result<Vec<Expression>, ParseError>{
+        let mut args:Vec<Expression> = vec![];
+
+        
+        self.next_token();
+        args.push(self.parse_expression(Precedence::LOWEST)?);
+
+        while self.peek_token_is(&Token::COMMA){
+            self.next_token();
+            self.next_token();
+            args.push(self.parse_expression(Precedence::LOWEST)?);
+        }
+
+        self.expect_peek_token(&Token::RPAREN)?;
+        Ok(args)
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
@@ -405,6 +431,15 @@ mod tests {
             ("fn(x,y,z) {};", "fn(x, y, z) {  }"),
         ];
 
+        test_helper(&test_cases);
+    }
+
+    #[test]
+    fn test_func_call_expression(){
+        let test_cases = vec![
+            ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2*3), (4+5), add(6, (7*8)))"),
+            ("add(1, 2 * 3, 4 + 5);", "add(1, (2*3), (4+5))")
+        ];
         test_helper(&test_cases);
     }
 }
