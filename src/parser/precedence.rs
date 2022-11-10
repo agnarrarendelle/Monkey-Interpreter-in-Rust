@@ -17,6 +17,7 @@ pub fn token_to_precedence(token: &Token)->Precedence{
         Token::GT | Token::LT=>Precedence::LESSGREATER,
         Token::PLUS | Token::MINUS=>Precedence::SUM,
         Token::SLASH | Token::ASTERISK=>Precedence::PRODUCT,
+        Token::LPAREN=>Precedence::CALL,
         _=>Precedence::LOWEST
     }
 }
