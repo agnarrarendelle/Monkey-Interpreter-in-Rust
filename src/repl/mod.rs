@@ -1,26 +1,42 @@
-use std::io::{BufRead, BufReader, Read, Write};
+use std::{
+    io::{stdout, BufRead, BufReader, Read, Write},
+};
 
-use crate::{lexer, token};
+use crate::{lexer, parser};
 
-pub fn start(input: impl Read, output: impl Write) -> std::io::Result<()> {
-    let reader = BufReader::new(input);
-
-    let lines = reader.lines();
-    for line in lines{
-        let line = line?;
-
-       
-        let mut l = lexer::Lexer::new(&line);
-        loop {
-            let tok = l.next_token();
-            if tok == token::Token::EOF {
-                // break;
-                return  Ok(());
-            }
-            println!("tok: {:?}",tok);
+pub fn start(input: impl Read, _output: impl Write) {
+    let mut reader = BufReader::new(input);
+    let mut input = String::new();
+    loop {
+        print!(">> ");
+        if let Err(e)=stdout().flush(){
+            println!("Error: {:?}", e);
+            break;
         }
-        
+        if let Err(e) = reader.read_line(&mut input) {
+            println!("Error: {:?}", e);
+            break;
+        } else if input.trim() == "!quit" || input.trim() == "!q" {
+            println!("exit");
+            std::process::exit(0)
+        } else {
+            println!("input is {}", input);
+            let  l = lexer::Lexer::new(&input);
+            let mut p = parser::Parser::new(l);
+            let program = p.parse_program();
+            input.clear();
+            match program {
+                Err(errors) => {
+                    for e in errors {
+                        println!("{}", e)
+                    }
+                }
+                Ok(p) => {
+                    println!("{}", p)
+                }
+            }
+        }
+       
     }
-    Ok(())
-
+   
 }
