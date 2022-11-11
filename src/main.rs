@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self};
 
 mod lexer;
 mod repl;
@@ -8,12 +8,5 @@ mod parser;
 
 fn main() {
     println!("Feel free to type in commands");
-    loop{
-        print!(">> ");
-        io::stdout().flush().unwrap();
-        if let Err(_) = repl::start(io::stdin(), io::stdout()){
-            println!("fuck");
-        }
-
-    }
+    repl::start(io::stdin(), io::stdout());
 }
