@@ -20,7 +20,6 @@ pub fn start(input: impl Read, _output: impl Write) {
             println!("exit");
             std::process::exit(0)
         } else {
-            println!("input is {}", input);
             let  l = lexer::Lexer::new(&input);
             let mut p = parser::Parser::new(l);
             let program = p.parse_program();
