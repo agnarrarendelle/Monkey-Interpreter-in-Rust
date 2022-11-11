@@ -1,12 +1,6 @@
 use crate::token::Token;
-use std::fmt::{self, format, Display};
+use std::fmt::{self};
 use std::vec;
-
-#[derive(Debug)]
-pub enum Node {
-    Stat(Statement),
-    Expr(Expression),
-}
 
 #[derive(Debug)]
 pub struct Program {
