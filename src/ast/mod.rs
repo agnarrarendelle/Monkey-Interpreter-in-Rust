@@ -2,26 +2,19 @@ use crate::token::Token;
 use std::fmt::{self};
 use std::vec;
 
-#[derive(Debug)]
-pub struct Program {
-    pub statements: Vec<Statement>,
+pub enum Node {
+    Program(Vec<Statement>),
+    Stat(Statement),
+    Expr(Expression),
 }
 
-impl Default for Program {
-    fn default() -> Self {
-        Self { statements: vec![] }
-    }
-}
-
-impl fmt::Display for Program {
+impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut res = String::new();
-        for stat in &self.statements {
-            let stat_str = format!("{}", stat);
-            res.push_str(&stat_str);
+        match self {
+            Node::Program(p) => write!(f, "{}", format(p, "")),
+            Node::Stat(s) => write!(f, "{}", s),
+            Node::Expr(e) => write!(f, "{}", e),
         }
-
-        return write!(f, "{}", res);
     }
 }
 
@@ -68,7 +61,7 @@ pub enum Expression {
     Infix(Box<Expression>, Token, Box<Expression>),
     IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
     Func(Option<Vec<String>>, BlockStatement),
-    FuncCall(Box<Expression>, Vec<Expression>)
+    FuncCall(Box<Expression>, Vec<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -93,26 +86,23 @@ impl fmt::Display for Expression {
                     }
                     None => write!(f, "if {} {{ {} }}", condition_expr, consequence_expr),
                 };
-            },
-            Expression::Func(params, body)=>{
-                match params {
-                    Some(params)=>{
-                        write!(f, "fn({}) {{ {} }}", params.join(", "), body)
-                    }None=>write!(f, "fn() {{ {} }}", body)
+            }
+            Expression::Func(params, body) => match params {
+                Some(params) => {
+                    write!(f, "fn({}) {{ {} }}", params.join(", "), body)
                 }
+                None => write!(f, "fn() {{ {} }}", body),
             },
-            Expression::FuncCall(expression, arguments)=>{
-                write!(f, "{}({})", expression, format_expressions(&arguments))
+            Expression::FuncCall(expression, arguments) => {
+                write!(f, "{}({})", expression, format(&arguments, ", "))
             }
         };
     }
 }
 
-
-
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Literal {
-    Integer(i32),
+    Integer(i64),
     Bool(bool),
 }
 
@@ -125,7 +115,11 @@ impl fmt::Display for Literal {
     }
 }
 
-fn format_expressions(expressions:&Vec<Expression>)->String{
-    let exprs = expressions.iter().map(|expr| expr.to_string());
-    return  exprs.collect::<Vec<String>>().join(", ");
+
+
+fn format<T: fmt::Display>(f: &Vec<T>, seperator: &str) -> String {
+    f.iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join(seperator)
 }
