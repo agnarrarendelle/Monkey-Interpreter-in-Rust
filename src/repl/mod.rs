@@ -31,7 +31,9 @@ pub fn start(input: impl Read, _output: impl Write) {
                     }
                 }
                 Ok(p) => {
-                    println!("{}", p)
+                    for stmt in p{
+                        println!("{}", stmt)
+                    }
                 }
             }
         }

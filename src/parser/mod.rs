@@ -11,12 +11,12 @@ pub struct Parser {
     errors: Vec<ParseError>,
 }
 
-pub fn start_parsing(input: &str) -> Result<Program, Vec<ParseError>> {
+pub fn start_parsing(input: &str) -> Result<Node, Vec<ParseError>> {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program()?;
 
-    Ok(program)
+    Ok(Node::Program(program))
 }
 
 impl Parser {
@@ -37,11 +37,11 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    pub fn parse_program(&mut self) -> Result<Program, Vec<ParseError>> {
-        let mut program = Program::default();
+    pub fn parse_program(&mut self) -> Result<Vec<Statement>, Vec<ParseError>> {
+        let mut program = vec![];
         while !self.curr_token_is(&Token::EOF) {
             match self.parse_statement() {
-                Ok(stat) => program.statements.push(stat),
+                Ok(stat) => program.push(stat),
                 Err(err) => self.errors.push(err),
             }
 
@@ -107,15 +107,15 @@ impl Parser {
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         let mut left_expr = match &self.curr_token {
             Token::IDENT(x) => Ok(Expression::Identifier(x.clone())),
-            Token::INT(x) => match x.parse::<i32>() {
+            Token::INT(x) => match x.parse::<i64>() {
                 Ok(num) => Ok(Expression::Literal(Literal::Integer(num))),
                 Err(_) => Err(ParseError::parse_integer_error(x)),
             },
             Token::BOOLEAN(b) => Ok(Expression::Literal(Literal::Bool(*b))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
-            Token::LPAREN=>self.parse_group_expression(),
-            Token::IF=>self.parse_if_expression(),
-            Token::FUNCTION=>self.parse_function_expression(),
+            Token::LPAREN => self.parse_group_expression(),
+            Token::IF => self.parse_if_expression(),
+            Token::FUNCTION => self.parse_function_expression(),
             _ => todo!(),
         };
 
@@ -131,8 +131,8 @@ impl Parser {
                 | Token::GT => {
                     self.next_token();
                     left_expr = self.parse_infix_expression(left_expr.unwrap());
-                },
-                Token::LPAREN=>{
+                }
+                Token::LPAREN => {
                     self.next_token();
                     left_expr = self.parse_func_call_expression(left_expr.unwrap())
                 }
@@ -164,14 +164,14 @@ impl Parser {
         ))
     }
 
-    fn parse_group_expression(&mut self)-> Result<Expression, ParseError>{
+    fn parse_group_expression(&mut self) -> Result<Expression, ParseError> {
         self.next_token();
         let expression = self.parse_expression(Precedence::LOWEST)?;
         self.expect_peek_token(&Token::RPAREN)?;
         Ok(expression)
     }
 
-    fn parse_if_expression(&mut self)-> Result<Expression, ParseError>{
+    fn parse_if_expression(&mut self) -> Result<Expression, ParseError> {
         self.expect_peek_token(&Token::LPAREN)?;
         self.next_token();
         let condition = self.parse_expression(Precedence::LOWEST)?;
@@ -179,63 +179,66 @@ impl Parser {
         self.expect_peek_token(&Token::LBRACE)?;
         let consequence = self.parse_block_statements()?;
         let mut alternative = Option::None;
-        if self.peek_token_is(&Token::ELSE){
+        if self.peek_token_is(&Token::ELSE) {
             self.next_token();
             self.expect_peek_token(&Token::LBRACE)?;
             alternative = Some(self.parse_block_statements()?);
         }
 
-        Ok(Expression::IfExpr(Box::new(condition), consequence, alternative))
-
+        Ok(Expression::IfExpr(
+            Box::new(condition),
+            consequence,
+            alternative,
+        ))
     }
 
-    fn parse_block_statements(&mut self)-> Result<BlockStatement, ParseError>{
+    fn parse_block_statements(&mut self) -> Result<BlockStatement, ParseError> {
         let mut statements = vec![];
         self.next_token();
-        while !self.curr_token_is(&Token::RBRACE) && !self.curr_token_is(&Token::EOF){
+        while !self.curr_token_is(&Token::RBRACE) && !self.curr_token_is(&Token::EOF) {
             let stat = self.parse_statement()?;
             statements.push(stat);
             self.next_token();
-        };
+        }
         Ok(BlockStatement(statements))
     }
 
-    fn parse_function_expression(&mut self)-> Result<Expression, ParseError>{
+    fn parse_function_expression(&mut self) -> Result<Expression, ParseError> {
         self.expect_peek_token(&Token::LPAREN)?;
 
         let params = self.parse_function_parameter()?;
         self.expect_peek_token(&Token::LBRACE);
-        
+
         let body = self.parse_block_statements()?;
 
-        let expr =  match params {
-            Some(params)=>Expression::Func(Some(params), body),
-            None=>Expression::Func(None, body)
+        let expr = match params {
+            Some(params) => Expression::Func(Some(params), body),
+            None => Expression::Func(None, body),
         };
 
         Ok(expr)
     }
 
-    fn parse_function_parameter(&mut self)->Result<Option<Vec<String>>, ParseError>{
-        if self.peek_token_is(&Token::RPAREN){
+    fn parse_function_parameter(&mut self) -> Result<Option<Vec<String>>, ParseError> {
+        if self.peek_token_is(&Token::RPAREN) {
             self.next_token();
             return Ok(None);
         }
         let mut identifiers = vec![];
         self.next_token();
 
-        match &self.curr_token{
-            Token::IDENT(id)=>identifiers.push(id.clone()),
-            other=>return Err(ParseError::parse_identifier_error(other))
+        match &self.curr_token {
+            Token::IDENT(id) => identifiers.push(id.clone()),
+            other => return Err(ParseError::parse_identifier_error(other)),
         }
 
-        while self.peek_token_is(&Token::COMMA){
+        while self.peek_token_is(&Token::COMMA) {
             self.next_token();
             self.next_token();
 
-            match &self.curr_token{
-                Token::IDENT(id)=>identifiers.push(id.clone()),
-                other=>return Err(ParseError::parse_identifier_error(other))
+            match &self.curr_token {
+                Token::IDENT(id) => identifiers.push(id.clone()),
+                other => return Err(ParseError::parse_identifier_error(other)),
             }
         }
 
@@ -244,19 +247,21 @@ impl Parser {
         Ok(Some(identifiers))
     }
 
-    fn parse_func_call_expression(&mut self, expression:Expression)-> Result<Expression, ParseError>{
+    fn parse_func_call_expression(
+        &mut self,
+        expression: Expression,
+    ) -> Result<Expression, ParseError> {
         let args = self.parse_func_call_arguments()?;
         Ok(Expression::FuncCall(Box::new(expression), args))
     }
 
-    fn parse_func_call_arguments(&mut self)->Result<Vec<Expression>, ParseError>{
-        let mut args:Vec<Expression> = vec![];
+    fn parse_func_call_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
+        let mut args: Vec<Expression> = vec![];
 
-        
         self.next_token();
         args.push(self.parse_expression(Precedence::LOWEST)?);
 
-        while self.peek_token_is(&Token::COMMA){
+        while self.peek_token_is(&Token::COMMA) {
             self.next_token();
             self.next_token();
             args.push(self.parse_expression(Precedence::LOWEST)?);
@@ -359,9 +364,9 @@ mod tests {
             ("true;", "true"),
             ("false;", "false"),
             ("let foo = true;", "let foo = true;"),
-            ("3 > 5 == false","((3>5)==false)"),
+            ("3 > 5 == false", "((3>5)==false)"),
             ("!true", "(!true)"),
-            ("!!false", "(!(!false))")
+            ("!!false", "(!(!false))"),
         ];
 
         test_helper(&test_cases);
@@ -407,25 +412,25 @@ mod tests {
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3+(4*5))==((3*1)+(4*5)))"),
             ("(3+4)*2", "((3+4)*2)"),
-            ("4*(4/2)", "(4*(4/2))")
+            ("4*(4/2)", "(4*(4/2))"),
         ];
 
         test_helper(&test_cases);
     }
 
     #[test]
-    fn test_if_else_block(){
+    fn test_if_else_block() {
         let test_cases = vec![
             ("if(x<y){x};", "if (x<y) { x }"),
-            ("if ( x < y ) { x } else { y }", "if (x<y) { x } else { y }")
+            ("if ( x < y ) { x } else { y }", "if (x<y) { x } else { y }"),
         ];
 
         test_helper(&test_cases);
     }
 
     #[test]
-    fn test_func_paramater_parsing(){
-        let test_cases=vec![
+    fn test_func_paramater_parsing() {
+        let test_cases = vec![
             ("fn() {};", "fn() {  }"),
             ("fn(x) {};", "fn(x) {  }"),
             ("fn(x,y,z) {};", "fn(x, y, z) {  }"),
@@ -435,10 +440,13 @@ mod tests {
     }
 
     #[test]
-    fn test_func_call_expression(){
+    fn test_func_call_expression() {
         let test_cases = vec![
-            ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2*3), (4+5), add(6, (7*8)))"),
-            ("add(1, 2 * 3, 4 + 5);", "add(1, (2*3), (4+5))")
+            (
+                "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+                "add(a, b, 1, (2*3), (4+5), add(6, (7*8)))",
+            ),
+            ("add(1, 2 * 3, 4 + 5);", "add(1, (2*3), (4+5))"),
         ];
         test_helper(&test_cases);
     }
