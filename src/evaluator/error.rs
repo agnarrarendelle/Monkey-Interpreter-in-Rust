@@ -37,6 +37,6 @@ impl fmt::Display for UnknownOperatorError<'_> {
             }
         };
 
-        write!(f, "{}", res)
+        write!(f, "Error: {}", res)
     }
 }
