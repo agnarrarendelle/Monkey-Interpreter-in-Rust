@@ -8,9 +8,7 @@ use crate::token;
 #[derive(Debug,Clone)]
 pub struct ParseError(String);
 
-impl Error for ParseError{
 
-}
 
 impl fmt::Display for ParseError{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
