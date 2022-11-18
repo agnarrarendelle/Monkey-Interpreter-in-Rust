@@ -19,7 +19,7 @@ pub fn eval(node: Node) -> Rc<Object> {
 }
 
 fn eval_program(p: &Vec<Statement>) -> Rc<Object> {
-    let mut res = NULL.with(|n| n.clone());
+    let mut res = access_null();
     for stmt in p {
         res = eval_statements(stmt);
     }
@@ -89,7 +89,7 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> Rc<Object> {
 fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Rc<Object> {
     match **expr {
         Object::Integer(i) => Rc::new(Object::Integer(-i)),
-        _ => NULL.with(|n| n.clone()),
+        _ => access_null()
     }
 }
 
@@ -150,6 +150,10 @@ fn match_boolean_expression(b: &bool) -> Rc<Object> {
         true => BOOLEAN_TRUE.with(|b| b.clone()),
         false => BOOLEAN_FALSE.with(|b| b.clone()),
     }
+}
+
+fn access_null() -> Rc<Object>{
+    NULL.with(|n| n.clone())
 }
 #[cfg(test)]
 mod tests {
