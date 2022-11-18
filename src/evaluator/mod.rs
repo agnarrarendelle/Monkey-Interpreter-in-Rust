@@ -93,8 +93,8 @@ fn eval_infix_expression(
     match (left_val, right_val) {
         (Object::Integer(left), Object::Integer(right)) => {
             eval_integer_infix_expression(*left, operator, *right)
-        },
-        (Object::Boolean(left), Object::Boolean(right))=>{
+        }
+        (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(*left, operator, *right)
         }
         _ => todo!(),
@@ -107,10 +107,10 @@ fn eval_integer_infix_expression(left: i64, operator: &Token, right: i64) -> Rc<
         Token::MINUS => Object::Integer(left - right),
         Token::ASTERISK => Object::Integer(left * right),
         Token::SLASH => Object::Integer(left / right),
-        Token::GT=>return  match_boolean_expression(&(left > right)),
-        Token::LT=>return  match_boolean_expression(&(left < right)),
-        Token::EQ=>return  match_boolean_expression(&(left == right)),
-        Token::NOTEQ=>return  match_boolean_expression(&(left != right)),
+        Token::GT => return match_boolean_expression(&(left > right)),
+        Token::LT => return match_boolean_expression(&(left < right)),
+        Token::EQ => return match_boolean_expression(&(left == right)),
+        Token::NOTEQ => return match_boolean_expression(&(left != right)),
         _ => Object::Null,
     };
 
@@ -119,15 +119,21 @@ fn eval_integer_infix_expression(left: i64, operator: &Token, right: i64) -> Rc<
 
 fn eval_boolean_infix_expression(left: bool, operator: &Token, right: bool) -> Rc<Object> {
     let res = match *operator {
-        Token::EQ => return  match_boolean_expression(&(left==right)),
-        Token::NOTEQ => return  match_boolean_expression(&(left!=right)),
-        
+        Token::EQ => return match_boolean_expression(&(left == right)),
+        Token::NOTEQ => return match_boolean_expression(&(left != right)),
+
         _ => Object::Null,
     };
 
     Rc::new(res)
 }
 
+fn is_truthy(obj: &Object) -> bool {
+    match obj {
+        Object::Null | Object::Boolean(false) => false,
+        _ => true,
+    }
+}
 
 fn match_boolean_expression(b: &bool) -> Rc<Object> {
     match b {
