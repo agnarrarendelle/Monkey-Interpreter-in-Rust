@@ -40,6 +40,11 @@ fn eval_expression(e: &Expression) -> Rc<Object> {
             let right = eval_expression(expr);
             return eval_prefix_expression(&operator, &right);
         }
+        Expression::Infix(left, operator, right) => {
+            let left = eval_expression(left);
+            let right = eval_expression(right);
+            return eval_infix_expression(&left, operator, &right);
+        }
         _ => todo!(),
     }
 }
@@ -78,6 +83,33 @@ fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Rc<Object> {
     }
 }
 
+fn eval_infix_expression(
+    left_expr: &Rc<Object>,
+    operator: &Token,
+    right_expr: &Rc<Object>,
+) -> Rc<Object> {
+    let left_val = &**left_expr;
+    let right_val = &**right_expr;
+    match (left_val, right_val) {
+        (Object::Integer(left_val), Object::Integer(right_val)) => {
+            eval_integer_infix_expression(*left_val, operator, *right_val)
+        }
+        _ => todo!(),
+    }
+}
+
+fn eval_integer_infix_expression(left: i64, operator: &Token, right: i64) -> Rc<Object> {
+    let res = match *operator {
+        Token::PLUS => Object::Integer(left + right),
+        Token::MINUS => Object::Integer(left - right),
+        Token::ASTERISK => Object::Integer(left * right),
+        Token::SLASH => Object::Integer(left / right),
+        _ => Object::Null,
+    };
+
+    Rc::new(res)
+}
+
 fn match_boolean_expression(b: &bool) -> Rc<Object> {
     match b {
         true => BOOLEAN_TRUE.with(|b| b.clone()),
@@ -96,7 +128,24 @@ mod tests {
 
     #[test]
     fn test_eval_integer_expression() {
-        let tests = [("5", 5), ("10", 10), ("-5", -5), ("-10", -10), ("-0", 0)];
+        let tests = [
+            ("5", 5),
+            ("10", 10),
+            ("-5", -5),
+            ("-10", -10),
+            ("-0", 0),
+            ("5 + 5 + 5 + 5 - 10", 10),
+            ("2 * 2 * 2 * 2 * 2", 32),
+            ("-50 + 100 + -50", 0),
+            ("5 * (2 + 10)", 60),
+            ("5 + 2 * 10", 25),
+            ("20 + 2 * -10", 0),
+            ("50 / 2 * 2 + 10", 60),
+            ("2 * (5 + 10)", 30),
+            ("3 * 3 * 3 + 10", 37),
+            ("3 * (3 * 3) + 10", 37),
+            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
+        ];
 
         for t in tests {
             let evaluated = testEval(t.0);
