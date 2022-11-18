@@ -207,7 +207,7 @@ impl Parser {
         self.expect_peek_token(&Token::LPAREN)?;
 
         let params = self.parse_function_parameter()?;
-        self.expect_peek_token(&Token::LBRACE);
+        self.expect_peek_token(&Token::LBRACE)?;
 
         let body = self.parse_block_statements()?;
 
