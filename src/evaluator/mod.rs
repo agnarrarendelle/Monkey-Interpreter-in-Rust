@@ -140,7 +140,7 @@ fn eval_boolean_infix_expression(left: bool, operator: &Token, right: bool) -> R
 
 fn is_truthy(obj: &Object) -> bool {
     match obj {
-        Object::Null | Object::Boolean(false) => false,
+        Object::Null | Object::Boolean(false) | Object::Integer(0) => false,
         _ => true,
     }
 }
