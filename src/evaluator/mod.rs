@@ -1,3 +1,4 @@
+mod error;
 use std::rc::Rc;
 
 use crate::{
