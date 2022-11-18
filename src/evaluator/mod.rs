@@ -8,10 +8,12 @@ use crate::{
     token::*,
 };
 
+use self::error::*;
+
 thread_local!(static BOOLEAN_TRUE:Rc<Object> = Rc::new(Object::Boolean(true)));
 thread_local!(static BOOLEAN_FALSE:Rc<Object> = Rc::new(Object::Boolean(false)));
 thread_local!(static NULL:Rc<Object> = Rc::new(Object::Null));
-pub fn eval(node: Node) -> Rc<Object> {
+pub fn eval(node: Node) -> Result<Rc<Object>, EvalError> {
     match node {
         Node::Program(p) => eval_program(&p),
         Node::Stat(s) => eval_statements(&s),
@@ -19,7 +21,7 @@ pub fn eval(node: Node) -> Rc<Object> {
     }
 }
 
-fn eval_program(p: &Vec<Statement>) -> Rc<Object> {
+fn eval_program(p: &Vec<Statement>) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
     for stmt in p {
         res = eval_statements(stmt);
@@ -31,7 +33,7 @@ fn eval_program(p: &Vec<Statement>) -> Rc<Object> {
     res
 }
 
-fn eval_statements(s: &Statement) -> Rc<Object> {
+fn eval_statements(s: &Statement) -> Result<Rc<Object>, EvalError> {
     match s {
         Statement::Expression(expr) => eval_expression(expr),
         Statement::Return(expr) => {
@@ -42,7 +44,7 @@ fn eval_statements(s: &Statement) -> Rc<Object> {
     }
 }
 
-fn eval_block_statements(statements: &BlockStatement) -> Rc<Object> {
+fn eval_block_statements(statements: &BlockStatement) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
 
     for s in &statements.0 {
@@ -56,7 +58,7 @@ fn eval_block_statements(statements: &BlockStatement) -> Rc<Object> {
     res
 }
 
-fn eval_expression(e: &Expression) -> Rc<Object> {
+fn eval_expression(e: &Expression) -> Result<Rc<Object>, EvalError> {
     match e {
         Expression::Literal(lit) => eval_literal(lit),
         Expression::Prefix(operator, expr) => {
@@ -75,14 +77,14 @@ fn eval_expression(e: &Expression) -> Rc<Object> {
     }
 }
 
-fn eval_literal(lit: &Literal) -> Rc<Object> {
+fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Rc::new(Object::Integer(*i)),
         Literal::Bool(b) => match_boolean_expression(b),
     }
 }
 
-fn eval_prefix_expression(operator: &Token, right: &Rc<Object>) -> Rc<Object> {
+fn eval_prefix_expression(operator: &Token, right: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match operator {
         Token::BANG => eval_bang_operator_expression(right),
         Token::MINUS => eval_minus_prefix_operation(right),
@@ -90,7 +92,7 @@ fn eval_prefix_expression(operator: &Token, right: &Rc<Object>) -> Rc<Object> {
     }
 }
 
-fn eval_bang_operator_expression(expr: &Rc<Object>) -> Rc<Object> {
+fn eval_bang_operator_expression(expr: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match **expr {
         Object::Boolean(b) => match_boolean_expression(&(!b)),
         Object::Integer(i) => {
@@ -102,7 +104,7 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> Rc<Object> {
     }
 }
 
-fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Rc<Object> {
+fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match **expr {
         Object::Integer(i) => Rc::new(Object::Integer(-i)),
         _ => access_null()
@@ -113,7 +115,7 @@ fn eval_infix_expression(
     left_expr: &Rc<Object>,
     operator: &Token,
     right_expr: &Rc<Object>,
-) -> Rc<Object> {
+) -> Result<Rc<Object>, EvalError> {
     let left_val = &**left_expr;
     let right_val = &**right_expr;
     match (left_val, right_val) {
@@ -127,7 +129,11 @@ fn eval_infix_expression(
     }
 }
 
-fn eval_integer_infix_expression(left: i64, operator: &Token, right: i64) -> Rc<Object> {
+fn eval_integer_infix_expression(
+    left: i64,
+    operator: &Token,
+    right: i64,
+) -> Result<Rc<Object>, EvalError> {
     let res = match *operator {
         Token::PLUS => Object::Integer(left + right),
         Token::MINUS => Object::Integer(left - right),
@@ -143,7 +149,11 @@ fn eval_integer_infix_expression(left: i64, operator: &Token, right: i64) -> Rc<
     Rc::new(res)
 }
 
-fn eval_boolean_infix_expression(left: bool, operator: &Token, right: bool) -> Rc<Object> {
+fn eval_boolean_infix_expression(
+    left: bool,
+    operator: &Token,
+    right: bool,
+) -> Result<Rc<Object>, EvalError> {
     let res = match *operator {
         Token::EQ => return match_boolean_expression(&(left == right)),
         Token::NOTEQ => return match_boolean_expression(&(left != right)),
@@ -158,7 +168,7 @@ fn eval_if_expression(
     condition: &Expression,
     consequence: &BlockStatement,
     alternative: &Option<BlockStatement>,
-) -> Rc<Object> {
+) -> Result<Rc<Object>, EvalError> {
     let condition = eval_expression(condition);
     if is_truthy(&condition) {
         return eval_block_statements(consequence);
