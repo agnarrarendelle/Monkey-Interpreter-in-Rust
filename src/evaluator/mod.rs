@@ -33,6 +33,16 @@ fn eval_statements(s: &Statement) -> Rc<Object> {
     }
 }
 
+fn eval_block_statements(statements: &BlockStatement) -> Rc<Object> {
+    let mut res = access_null();
+
+    for s in &statements.0 {
+        res = eval_statements(&s);
+    }
+
+    res
+}
+
 fn eval_expression(e: &Expression) -> Rc<Object> {
     match e {
         Expression::Literal(lit) => eval_literal(lit),
