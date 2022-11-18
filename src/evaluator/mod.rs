@@ -54,6 +54,7 @@ fn eval_literal(lit: &Literal) -> Rc<Object> {
 fn eval_prefix_expression(operator: &Token, right: &Rc<Object>) -> Rc<Object> {
     match operator {
         Token::BANG => eval_bang_operator_expression(right),
+        Token::MINUS => eval_minus_prefix_operation(right),
         _ => todo!(),
     }
 }
@@ -67,6 +68,13 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> Rc<Object> {
             return match_boolean_expression(&b);
         }
         _ => todo!(),
+    }
+}
+
+fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Rc<Object> {
+    match **expr {
+        Object::Integer(i) => Rc::new(Object::Integer(-i)),
+        _ => NULL.with(|n| n.clone()),
     }
 }
 
@@ -88,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_eval_integer_expression() {
-        let tests = [("5", 5), ("10", 10)];
+        let tests = [("5", 5), ("10", 10), ("-5", -5), ("-10", -10), ("-0", 0)];
 
         for t in tests {
             let evaluated = testEval(t.0);
@@ -105,7 +113,6 @@ mod tests {
             ("!!true", true),
             ("!!false", false),
             ("!!5", true),
-            
         ];
 
         for t in tests {
