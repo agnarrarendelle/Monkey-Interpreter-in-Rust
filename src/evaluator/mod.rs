@@ -46,6 +46,10 @@ fn eval_block_statements(statements: &BlockStatement) -> Rc<Object> {
 
     for s in &statements.0 {
         res = eval_statements(&s);
+
+        if let Object::ReturnValue(_) = *res{
+            return  res;
+        }
     }
 
     res
