@@ -206,7 +206,7 @@ mod tests {
         ];
 
         for t in tests {
-            let evaluated = testEval(t.0);
+            let evaluated = test_eval(t.0);
             assert_eq!(*evaluated, Object::Integer(t.1))
         }
     }
@@ -223,12 +223,34 @@ mod tests {
         ];
 
         for t in tests {
-            let evaluated = testEval(t.0);
+            let evaluated = test_eval(t.0);
             assert_eq!(*evaluated, Object::Boolean(t.1))
         }
     }
 
-    fn testEval(input: &str) -> Rc<Object> {
+    #[test]
+    fn test_if_expressions() {
+        let tests_non_null = [("if (true) { 10 }", 10)];
+
+        for t in tests_non_null {
+            let evaluated = test_eval(t.0);
+            assert_eq!(*evaluated, Object::Integer(t.1))
+        }
+
+        let tests_null = [
+            "if (false) { 10 }",
+            "if(1 > 2) {5}",
+            "if (0) {1}",
+            "if (!true) {5}"
+        ];
+
+        for t in tests_null {
+            let evaluated = test_eval(t);
+            assert_eq!(*evaluated, *access_null())
+        }
+    }
+
+    fn test_eval(input: &str) -> Rc<Object> {
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program().unwrap();
