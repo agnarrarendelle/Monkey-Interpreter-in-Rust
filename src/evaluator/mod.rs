@@ -22,6 +22,10 @@ fn eval_program(p: &Vec<Statement>) -> Rc<Object> {
     let mut res = access_null();
     for stmt in p {
         res = eval_statements(stmt);
+
+        if let Object::ReturnValue(_) = &*res {
+            return res;
+        }
     }
     res
 }
@@ -29,6 +33,10 @@ fn eval_program(p: &Vec<Statement>) -> Rc<Object> {
 fn eval_statements(s: &Statement) -> Rc<Object> {
     match s {
         Statement::Expression(expr) => eval_expression(expr),
+        Statement::Return(expr) => {
+            let expr = eval_expression(&expr);
+            return Rc::new(Object::ReturnValue(expr));
+        }
         _ => todo!(),
     }
 }
