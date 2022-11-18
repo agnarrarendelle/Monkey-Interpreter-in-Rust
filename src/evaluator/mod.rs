@@ -55,6 +55,9 @@ fn eval_expression(e: &Expression) -> Rc<Object> {
             let right = eval_expression(right);
             return eval_infix_expression(&left, operator, &right);
         }
+        Expression::IfExpr(condition, consequence, alternative) => {
+            return eval_if_expression(condition, consequence, alternative);
+        }
         _ => todo!(),
     }
 }
@@ -136,6 +139,22 @@ fn eval_boolean_infix_expression(left: bool, operator: &Token, right: bool) -> R
     };
 
     Rc::new(res)
+}
+
+fn eval_if_expression(
+    condition: &Expression,
+    consequence: &BlockStatement,
+    alternative: &Option<BlockStatement>,
+) -> Rc<Object> {
+    let condition = eval_expression(condition);
+    if is_truthy(&condition) {
+        return eval_block_statements(consequence);
+    } else {
+        match &alternative {
+            Some(alter) => eval_block_statements(&alter),
+            None => access_null()
+        }
+    }
 }
 
 fn is_truthy(obj: &Object) -> bool {
