@@ -205,6 +205,16 @@ mod tests {
 
     use super::*;
 
+    fn test_helper(cases: &[(&str, &str)]) {
+        for (input, expected) in cases {
+            let node = start_parsing(input).unwrap();
+            match eval(node) {
+                Ok(evaluated) => assert_eq!(expected, &format!("{}", evaluated)),
+                Err(err) => assert_eq!(expected, &format!("{}", err)),
+            }
+        }
+    }
+
     #[test]
     fn test_eval_integer_expression() {
         let tests = [
