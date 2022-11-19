@@ -163,7 +163,6 @@ fn eval_boolean_infix_expression(
 
         _ => return Err(unknown_operator::infix(left, operator, right)),
     };
-
 }
 
 fn eval_if_expression(
@@ -196,12 +195,15 @@ fn match_boolean_expression(b: &bool) -> Rc<Object> {
     }
 }
 
-fn access_null() -> Rc<Object>{
+fn access_null() -> Rc<Object> {
     NULL.with(|n| n.clone())
 }
 #[cfg(test)]
 mod tests {
-    use crate::{lexer::Lexer, parser::Parser};
+    use crate::{
+        lexer::Lexer,
+        parser::{start_parsing, Parser},
+    };
 
     use super::*;
 
@@ -218,75 +220,70 @@ mod tests {
     #[test]
     fn test_eval_integer_expression() {
         let tests = [
-            ("5", 5),
-            ("10", 10),
-            ("-5", -5),
-            ("-10", -10),
-            ("-0", 0),
-            ("5 + 5 + 5 + 5 - 10", 10),
-            ("2 * 2 * 2 * 2 * 2", 32),
-            ("-50 + 100 + -50", 0),
-            ("5 * (2 + 10)", 60),
-            ("5 + 2 * 10", 25),
-            ("20 + 2 * -10", 0),
-            ("50 / 2 * 2 + 10", 60),
-            ("2 * (5 + 10)", 30),
-            ("3 * 3 * 3 + 10", 37),
-            ("3 * (3 * 3) + 10", 37),
-            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
+            ("5", "5"),
+            ("10", "10"),
+            ("-5", "-5"),
+            ("-10", "-10"),
+            ("-0", "0"),
+            ("5 + 5 + 5 + 5 - 10", "10"),
+            ("2 * 2 * 2 * 2 * 2", "32"),
+            ("-50 + 100 + -50", "0"),
+            ("5 * (2 + 10)", "60"),
+            ("5 + 2 * 10", "25"),
+            ("20 + 2 * -10", "0"),
+            ("50 / 2 * 2 + 10", "60"),
+            ("2 * (5 + 10)", "30"),
+            ("3 * 3 * 3 + 10", "37"),
+            ("3 * (3 * 3) + 10", "37"),
+            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", "50"),
         ];
 
-        for t in tests {
-            let evaluated = test_eval(t.0);
-            assert_eq!(*evaluated, Object::Integer(t.1))
-        }
+        test_helper(&tests)
     }
 
     #[test]
     fn test_bang_operator() {
         let tests = [
-            ("!true", false),
-            ("!false", true),
-            ("!5", false),
-            ("!!true", true),
-            ("!!false", false),
-            ("!!5", true),
+            ("!true", "false"),
+            ("!false", "true"),
+            ("!5", "false"),
+            ("!!true", "true"),
+            ("!!false", "false"),
+            ("!!5", "true"),
         ];
 
-        for t in tests {
-            let evaluated = test_eval(t.0);
-            assert_eq!(*evaluated, Object::Boolean(t.1))
-        }
+        test_helper(&tests)
     }
 
     #[test]
     fn test_if_expressions() {
-        // let tests_non_null = [("if (10 > 1) {if (10 > 1) {return 10;}return 1;}", 10)];
+        let tests_non_null = [("if (10 > 1) {if (10 > 1) {return 10;}return 1;}", "10")];
 
-        // for t in tests_non_null {
-        //     let evaluated = test_eval(t.0);
-        //     assert_eq!(*evaluated, Object::Integer(t.1))
-        // }
+        let tests_null = [("if(false){1}", "NULL"), ("if(1 > 2){true}", "NULL")];
 
-        let tests_null = [
-            "!"
+        test_helper(&tests_non_null);
+        test_helper(&tests_null);
+    }
+
+    #[test]
+    fn test_error_handling() {
+        let tests = [
+            ("1+true", "Type Mismatch: Integer(1) + Boolean(true)"),
+            ("false+2", "Type Mismatch: Boolean(false) + Integer(2)"),
+            ("-true", "Unknown Operator: -true"),
+            ("true + false", "Unknown Operator: true + false"),
+            ("5; true + false; 5", "Unknown Operator: true + false"),
+            (
+                "if (10 > 1) { true + false; }",
+                "Unknown Operator: true + false",
+            ),
+            (
+                "if (10 > 1) {if (10 > 1) {return true + false;}return 1;}",
+                "Unknown Operator: true + false",
+            ),
         ];
 
-        for t in tests_null {
-            let evaluated = test_eval(t);
-            assert_eq!(*evaluated, *access_null())
-        }
+        test_helper(&tests);
     }
 
-    fn test_eval(input: &str) -> Rc<Object> {
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-        let program = p.parse_program().unwrap();
-        let node = Node::Program(program);
-
-        match eval(node){
-            Ok(o)=>o,
-            Err(_)=>{panic!()}
-        }
-    }
 }
