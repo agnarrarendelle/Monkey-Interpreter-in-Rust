@@ -18,3 +18,14 @@ impl fmt::Display for Object {
         }
     }
 }
+
+impl Object{
+    pub fn get_type(&self)->String{
+        match self {
+            Object::Integer(i) => format!("Integer({})", i),
+            Object::Boolean(b) => format!("Boolean({})", b),
+            Object::ReturnValue(v)=> format!("{}", v),
+            Object::Null => format!("NULL"),
+        }
+    }
+}
