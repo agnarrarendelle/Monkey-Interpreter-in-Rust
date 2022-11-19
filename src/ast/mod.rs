@@ -1,6 +1,5 @@
 use crate::token::Token;
 use std::fmt::{self};
-use std::vec;
 
 pub enum Node {
     Program(Vec<Statement>),

@@ -201,8 +201,7 @@ fn access_null() -> Rc<Object> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::Lexer,
-        parser::{start_parsing, Parser},
+        parser::{start_parsing},
     };
 
     use super::*;

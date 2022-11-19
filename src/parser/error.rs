@@ -1,5 +1,4 @@
 use std::fmt::{self};
-use std::error::Error;
 
 use crate::token;
 
