@@ -18,25 +18,33 @@ use std::fmt;
 
 use crate::{object::Object, token::Token};
 
-pub enum EvalError {
-    UnknownOperatorError
+pub enum EvalError<'a> {
+    UnknownOperator(UnknownOperatorError<'a>),
 }
 
-enum UnknownOperatorError<'a> {
+pub enum UnknownOperatorError<'a> {
     Prefix(&'a Token, &'a Object),
     MinusPrefix(&'a Object),
-    IntegerBooleanPrefix(&'a i64, &'a Token, &'a i64),
+    IntegerBooleanPrefix(&'a Token, &'a Object),
+    IntegerInfix(&'a i64, &'a Token, &'a i64),
+    BooleanInfix(bool, &'a Token, bool)
 }
 impl fmt::Display for UnknownOperatorError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let res = match self {
             UnknownOperatorError::Prefix(t, o) => format!("{}{}", t, o),
             UnknownOperatorError::MinusPrefix(o) => format!("-{}", o),
-            UnknownOperatorError::IntegerBooleanPrefix(left, t, right) => {
+            UnknownOperatorError::IntegerBooleanPrefix(t, o) => {
+                format!("{} {}", t, o)
+            }
+            UnknownOperatorError::IntegerInfix(left, t, right) => {
+                format!("{} {} {}", left, t, right)
+            },
+            UnknownOperatorError::BooleanInfix(left,t ,right )=>{
                 format!("{} {} {}", left, t, right)
             }
         };
 
-        write!(f, "Error: {}", res)
+        write!(f, "Unknown Operator Error: {}", res)
     }
 }
