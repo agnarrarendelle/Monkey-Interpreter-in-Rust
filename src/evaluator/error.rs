@@ -10,16 +10,17 @@ impl fmt::Display for EvalError{
 
 pub mod UnknownOperator{
     use super::*;
+    const ERROR_TYPE:&str = "Unknown Operator: ";
     pub fn prefix(t: &Token, o: &Object)->EvalError{
-        EvalError(format!("{}{}",t,o))
+        EvalError(format!("{}{}{}",ERROR_TYPE,t,o))
     }
 
     pub fn minus_prefix(o:&Object)->EvalError{
-        EvalError(format!("-{}",o))
+        EvalError(format!("{}-{}",ERROR_TYPE,o))
     }
     
     pub fn infix<T:fmt::Display>(left:T, t:&Token, right:T)->EvalError{
-        EvalError(format!("{} {} {}", left, t, right))
+        EvalError(format!("{}{} {} {}",ERROR_TYPE, left, t, right))
     }
 }
 
