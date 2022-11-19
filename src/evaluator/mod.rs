@@ -86,9 +86,9 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
 
 fn eval_prefix_expression(operator: &Token, right: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match operator {
-        Token::BANG => eval_bang_operator_expression(right),
-        Token::MINUS => eval_minus_prefix_operation(right),
-        _ => todo!(),
+        Token::BANG => eval_bang_operator_expression(&right),
+        Token::MINUS => eval_minus_prefix_operation(&right),
+        _ => Err(UnknownOperator::prefix(operator, right)),
     }
 }
 
@@ -106,8 +106,8 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> Result<Rc<Object>, EvalEr
 
 fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match **expr {
-        Object::Integer(i) => Rc::new(Object::Integer(-i)),
-        _ => access_null()
+        Object::Integer(i) => Ok(Rc::new(Object::Integer(-i))),
+        _ => Err(UnknownOperator::minus_prefix(expr)),
     }
 }
 
@@ -125,7 +125,7 @@ fn eval_infix_expression(
         (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(*left, operator, *right)
         }
-        _ => todo!(),
+        _ => Err(UnknownOperator::infix(left_val, operator, right_val)),
     }
 }
 
@@ -139,11 +139,14 @@ fn eval_integer_infix_expression(
         Token::MINUS => Object::Integer(left - right),
         Token::ASTERISK => Object::Integer(left * right),
         Token::SLASH => Object::Integer(left / right),
-        Token::GT => return match_boolean_expression(&(left > right)),
-        Token::LT => return match_boolean_expression(&(left < right)),
-        Token::EQ => return match_boolean_expression(&(left == right)),
-        Token::NOTEQ => return match_boolean_expression(&(left != right)),
-        _ => Object::Null,
+        Token::GT => return Ok(match_boolean_expression(&(left > right))),
+        Token::LT => return Ok(match_boolean_expression(&(left < right))),
+        Token::EQ => return Ok(match_boolean_expression(&(left == right))),
+        Token::NOTEQ => return Ok(match_boolean_expression(&(left != right))),
+        _ => {
+            return Err(UnknownOperator::infix(&left, operator, &right),
+            )
+        }
     };
 
     Rc::new(res)
@@ -158,7 +161,7 @@ fn eval_boolean_infix_expression(
         Token::EQ => return match_boolean_expression(&(left == right)),
         Token::NOTEQ => return match_boolean_expression(&(left != right)),
 
-        _ => Object::Null,
+        _ =>return Err(UnknownOperator::infix(left, operator, right)),
     };
 
     Rc::new(res)
@@ -175,7 +178,7 @@ fn eval_if_expression(
     } else {
         match &alternative {
             Some(alter) => eval_block_statements(&alter),
-            None => access_null()
+            None => Ok(access_null()),
         }
     }
 }
