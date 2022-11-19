@@ -4,11 +4,11 @@ pub struct EvalError(String);
 
 impl fmt::Display for EvalError{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return write!(f, "Error: {}", self.0);
+        return write!(f, "{}", self.0);
     }
 }
 
-pub mod UnknownOperator{
+pub mod unknown_operator{
     use super::*;
     const ERROR_TYPE:&str = "Unknown Operator: ";
     pub fn prefix(t: &Token, o: &Object)->EvalError{
@@ -20,6 +20,14 @@ pub mod UnknownOperator{
     }
     
     pub fn infix<T:fmt::Display>(left:T, t:&Token, right:T)->EvalError{
+        EvalError(format!("{}{} {} {}",ERROR_TYPE, left, t, right))
+    }
+}
+
+pub mod type_mismatch{
+    use super::*;
+    const ERROR_TYPE:&str = "Type Mismatch: ";
+    pub fn type_mismatch(left:&str, t:&Token, right:&str)->EvalError{
         EvalError(format!("{}{} {} {}",ERROR_TYPE, left, t, right))
     }
 }
