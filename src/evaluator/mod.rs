@@ -124,7 +124,11 @@ fn eval_infix_expression(
         (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(*left, operator, *right)
         }
-        _ => Err(UnknownOperator::infix(left_val, operator, right_val)),
+        _ => Err(type_mismatch::type_mismatch(
+            &left_val.get_type(),
+            operator,
+            &right_val.get_type(),
+        )),
     }
 }
 
