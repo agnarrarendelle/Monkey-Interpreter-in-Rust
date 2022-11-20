@@ -1,12 +1,14 @@
 use std::{
-    io::{stdout, BufRead, BufReader, Read, Write},
+    io::{stdout, BufRead, BufReader, Read, Write}, cell::RefCell, rc::Rc,
 };
 
-use crate::{lexer, parser};
+use crate::{lexer, parser, evaluator::eval, object::environment};
 
 pub fn start(input: impl Read, _output: impl Write) {
     let mut reader = BufReader::new(input);
     let mut input = String::new();
+    let env = Rc::new(RefCell::new(environment::Environment::new()));
+
     loop {
         print!(">> ");
         if let Err(e)=stdout().flush(){
@@ -31,8 +33,15 @@ pub fn start(input: impl Read, _output: impl Write) {
                     }
                 }
                 Ok(p) => {
-                    for stmt in p{
-                        println!("{}", stmt)
+                    let evaluated = eval(crate::ast::Node::Program(p), &env);
+                    match evaluated{
+                        Ok(res)=>{
+
+                            println!("{}", res)
+                        },
+                        Err(e)=>{
+                            println!("{}", e)
+                        }
                     }
                 }
             }

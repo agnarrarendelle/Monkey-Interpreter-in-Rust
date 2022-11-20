@@ -4,7 +4,10 @@ use std::rc::Rc;
 use crate::{
     ast::{BlockStatement, Expression, Literal, Node, Statement},
     object::Object,
+    object::environment::Env,
     token::*,
+    
+
 };
 
 use self::error::*;
@@ -12,18 +15,18 @@ use self::error::*;
 thread_local!(static BOOLEAN_TRUE:Rc<Object> = Rc::new(Object::Boolean(true)));
 thread_local!(static BOOLEAN_FALSE:Rc<Object> = Rc::new(Object::Boolean(false)));
 thread_local!(static NULL:Rc<Object> = Rc::new(Object::Null));
-pub fn eval(node: Node) -> Result<Rc<Object>, EvalError> {
+pub fn eval(node: Node, env:&Env) -> Result<Rc<Object>, EvalError> {
     match node {
-        Node::Program(p) => eval_program(&p),
-        Node::Stat(s) => eval_statements(&s),
-        Node::Expr(e) => eval_expression(&e),
+        Node::Program(p) => eval_program(&p, env),
+        Node::Stat(s) => eval_statements(&s, env),
+        Node::Expr(e) => eval_expression(&e, env),
     }
 }
 
-fn eval_program(p: &Vec<Statement>) -> Result<Rc<Object>, EvalError> {
+fn eval_program(p: &Vec<Statement>,env:&Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
     for stmt in p {
-        res = eval_statements(stmt)?;
+        res = eval_statements(stmt, env)?;
 
         if let Object::ReturnValue(_) = &*res {
             return Ok(res);
@@ -32,22 +35,25 @@ fn eval_program(p: &Vec<Statement>) -> Result<Rc<Object>, EvalError> {
     Ok(res)
 }
 
-fn eval_statements(s: &Statement) -> Result<Rc<Object>, EvalError> {
+fn eval_statements(s: &Statement, env:&Env) -> Result<Rc<Object>, EvalError> {
     match s {
-        Statement::Expression(expr) => eval_expression(expr),
+        Statement::Expression(expr) => eval_expression(expr, env),
         Statement::Return(expr) => {
-            let expr = eval_expression(&expr)?;
+            let expr = eval_expression(&expr, env)?;
             return Ok(Rc::new(Object::ReturnValue(expr)));
+        },
+        Statement::Let(identifier, expr)=>{
+            let expr = eval_expression(&expr, env)?;
+            todo!()
         }
-        _ => todo!(),
     }
 }
 
-fn eval_block_statements(statements: &BlockStatement) -> Result<Rc<Object>, EvalError> {
+fn eval_block_statements(statements: &BlockStatement, env:&Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
 
     for s in &statements.0 {
-        res = eval_statements(&s)?;
+        res = eval_statements(&s, env)?;
 
         if let Object::ReturnValue(_) = *res {
             return Ok(res);
@@ -57,26 +63,26 @@ fn eval_block_statements(statements: &BlockStatement) -> Result<Rc<Object>, Eval
     Ok(res)
 }
 
-fn eval_expression(e: &Expression) -> Result<Rc<Object>, EvalError> {
+fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
     match e {
-        Expression::Literal(lit) => eval_literal(lit),
+        Expression::Literal(lit) => eval_literal(lit, env),
         Expression::Prefix(operator, expr) => {
-            let right = eval_expression(expr)?;
+            let right = eval_expression(expr,env)?;
             return eval_prefix_expression(&operator, &right.clone());
         }
         Expression::Infix(left, operator, right) => {
-            let left = eval_expression(left)?;
-            let right = eval_expression(right)?;
+            let left = eval_expression(left,env)?;
+            let right = eval_expression(right,env)?;
             return eval_infix_expression(&left, operator, &right);
         }
         Expression::IfExpr(condition, consequence, alternative) => {
-            return eval_if_expression(condition, consequence, alternative);
+            return eval_if_expression(condition, consequence, alternative, env);
         }
         _ => todo!(),
     }
 }
 
-fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
+fn eval_literal(lit: &Literal, env:&Env) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
@@ -169,13 +175,14 @@ fn eval_if_expression(
     condition: & Expression,
     consequence: & BlockStatement,
     alternative: & Option<BlockStatement>,
+    env:&Env
 ) -> Result<Rc<Object>, EvalError> {
-    let condition = eval_expression(condition)?;
+    let condition = eval_expression(condition,env)?;
     if is_truthy(&condition) {
-        return eval_block_statements(consequence);
+        return eval_block_statements(consequence,env);
     } else {
         match &alternative {
-            Some(alter) => eval_block_statements(&alter),
+            Some(alter) => eval_block_statements(&alter,env),
             None => Ok(access_null()),
         }
     }
@@ -200,16 +207,19 @@ fn access_null() -> Rc<Object> {
 }
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+
     use crate::{
-        parser::{start_parsing},
+        parser::{start_parsing}, object::environment,
     };
 
     use super::*;
 
     fn test_helper(cases: &[(&str, &str)]) {
+        let env = Rc::new(RefCell::new(environment::Environment::new()));
         for (input, expected) in cases {
             let node = start_parsing(input).unwrap();
-            match eval(node) {
+            match eval(node, &env) {
                 Ok(evaluated) => assert_eq!(expected, &format!("{}", evaluated)),
                 Err(err) => assert_eq!(expected, &format!("{}", err)),
             }
