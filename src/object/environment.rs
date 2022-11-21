@@ -4,6 +4,7 @@ use super::Object;
 
 pub type Env = Rc<RefCell<Environment>>; 
 
+#[derive(PartialEq, Debug)]
 pub struct Environment{
     store: HashMap<String, Rc<Object>>
 }
