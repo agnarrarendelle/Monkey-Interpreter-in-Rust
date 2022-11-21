@@ -80,6 +80,12 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
         }
         Expression::IfExpr(condition, consequence, alternative) => {
             return eval_if_expression(condition, consequence, alternative, env);
+        },
+        Expression::Func(params,body)=>{
+            let params = params.clone();
+            let body = body.clone();
+
+            Ok(Rc::new(Object::Funtion(params, body, env.clone())))
         }
         _ => todo!(),
     }
