@@ -67,7 +67,8 @@ fn eval_block_statements(statements: &BlockStatement, env:&Env) -> Result<Rc<Obj
 
 fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
     match e {
-        Expression::Literal(lit) => eval_literal(lit, env),
+        Expression::Identifier(id)=>eval_identifier(id, env),
+        Expression::Literal(lit) => eval_literal(lit),
         Expression::Prefix(operator, expr) => {
             let right = eval_expression(expr,env)?;
             return eval_prefix_expression(&operator, &right.clone());
@@ -84,10 +85,19 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_literal(lit: &Literal, env:&Env) -> Result<Rc<Object>, EvalError> {
+fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
+    }
+}
+
+fn eval_identifier(id:&str, env:&Env)-> Result<Rc<Object>, EvalError>{
+    match env.borrow_mut().get(id){
+        Some(obj)=>Ok(obj),
+        None=>{
+            Err(identifier_unfound::new(id))
+        }
     }
 }
 
@@ -292,6 +302,7 @@ mod tests {
                 "if (10 > 1) {if (10 > 1) {return true + false;}return 1;}",
                 "Unknown Operator: true + false",
             ),
+            ("ggg", "Identifer not Found: ggg")
         ];
 
         test_helper(&tests);
