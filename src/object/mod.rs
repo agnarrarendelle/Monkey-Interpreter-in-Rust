@@ -1,11 +1,16 @@
 pub(crate) mod environment;
 use std::{fmt, rc::Rc};
 
+use crate::ast::BlockStatement;
+
+use self::environment::Env;
+
 #[derive(PartialEq, Debug)]
 pub enum Object {
     Integer(i64),
     Boolean(bool),
     ReturnValue(Rc<Object>),
+    Funtion(Option<Vec<String>>, BlockStatement, Env),
     Null
 }
 
@@ -15,6 +20,12 @@ impl fmt::Display for Object {
             Object::Integer(i) => write!(f, "{}", i),
             Object::Boolean(b) => write!(f, "{}", b),
             Object::ReturnValue(v)=> write!(f, "{}", v),
+            Object::Funtion(params, body, _)=>{
+                match params{
+                    Some(params)=> writeln!(f, "fn({}) {{\n{}\n}}", params.join(", "), body),
+                    None=>writeln!(f, "fn() {{\n{}\n}}", body),
+                }
+            }
             Object::Null => write!(f, "NULL"),
         }
     }
@@ -26,6 +37,12 @@ impl Object{
             Object::Integer(i) => format!("Integer({})", i),
             Object::Boolean(b) => format!("Boolean({})", b),
             Object::ReturnValue(v)=> format!("{}", v),
+            Object::Funtion(params, body, _)=>{
+                match params{
+                    Some(params)=> format!("Function({}) {{\n{}\n}}", params.join(", "), body),
+                    None=>format!("Function() {{\n{}\n}}", body),
+                }
+            }
             Object::Null => format!("NULL"),
         }
     }
