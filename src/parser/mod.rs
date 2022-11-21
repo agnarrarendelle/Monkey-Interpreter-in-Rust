@@ -116,7 +116,7 @@ impl Parser {
             Token::LPAREN => self.parse_group_expression(),
             Token::IF => self.parse_if_expression(),
             Token::FUNCTION => self.parse_function_expression(),
-            _ => todo!(),
+            _ => Err(ParseError::unrecognizable_token_error()),
         };
 
         while !self.peek_token_is(&Token::SEMICOLON) && precedence < self.peek_precedence() {
