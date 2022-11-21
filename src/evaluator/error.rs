@@ -32,6 +32,14 @@ pub mod type_mismatch{
     }
 }
 
+pub mod identifier_unfound{
+    use super::*;
+    const ERROR_TYPE:&str = "Identifer not Found: ";
+    pub fn new(id: &str)->EvalError{
+        EvalError(format!("{}{}",ERROR_TYPE,id))
+    }
+}
+
 // impl EvalError{
 //     pub fn new(err: String)->Self{
 //         Self(err)
