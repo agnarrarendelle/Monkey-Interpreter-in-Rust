@@ -9,6 +9,10 @@ pub struct Environment{
 }
 
 impl Environment{
+    pub fn new()->Self{
+        Self { store: HashMap::new() }
+    }
+
     pub fn get(&self,name: &str)->Option<Rc<Object>>{
         match self.store.get(name){
             Some(obj)=>Some(Rc::clone(obj)),

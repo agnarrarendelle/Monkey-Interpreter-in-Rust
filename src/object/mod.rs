@@ -1,3 +1,4 @@
+pub(crate) mod environment;
 use std::{fmt, rc::Rc};
 
 #[derive(PartialEq, Debug)]

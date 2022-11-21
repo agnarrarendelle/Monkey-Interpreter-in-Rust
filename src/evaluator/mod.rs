@@ -43,8 +43,10 @@ fn eval_statements(s: &Statement, env:&Env) -> Result<Rc<Object>, EvalError> {
             return Ok(Rc::new(Object::ReturnValue(expr)));
         },
         Statement::Let(identifier, expr)=>{
-            let expr = eval_expression(&expr, env)?;
-            todo!()
+            let value = eval_expression(&expr, env)?;
+            env.borrow_mut().set(identifier, value.clone());
+
+            Ok(value)
         }
     }
 }
