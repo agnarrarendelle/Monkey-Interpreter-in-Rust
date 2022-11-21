@@ -33,4 +33,8 @@ impl ParseError{
     pub fn illegal_token_error()->Self{
         Self::new(format!("Cannot parse illegal token") )
     }
+
+    pub fn unrecognizable_token_error()->Self{
+        Self::new(format!("Unrecognizable Token") )
+    }
 }
