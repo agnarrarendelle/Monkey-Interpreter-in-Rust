@@ -91,6 +91,17 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
+fn eval_expressions(expressions: &Vec<Expression>, env:&Env)-> Result<Vec<Rc<Object>>, EvalError> {
+    let mut exprs = vec![];
+    for expr in expressions{
+        let res = eval_expression(expr, &env.clone())?;
+        exprs.push(res);
+    }
+
+    Ok(exprs)
+
+}
+
 fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
