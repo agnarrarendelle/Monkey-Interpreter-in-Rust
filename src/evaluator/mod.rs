@@ -86,6 +86,11 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
             let body = body.clone();
 
             Ok(Rc::new(Object::Funtion(params, body, env.clone())))
+        },
+        Expression::FuncCall(expr, params)=>{
+            let func = eval_expression(expr, env)?;
+            let args = eval_expressions(params, env)?;
+            apply_function(func, &args)
         }
         _ => todo!(),
     }
@@ -214,6 +219,38 @@ fn eval_if_expression(
             Some(alter) => eval_block_statements(&alter,env),
             None => Ok(access_null()),
         }
+    }
+}
+
+fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+    match &*func{
+        Object::Funtion(params,body , env)=>{
+            // let extended_env = Rc::new(RefCell::new(extend_func_env(&env, args, params)));
+            let extended_env = match params{
+                Some(params)=>Rc::new(RefCell::new(extend_func_env(&env, args, params))),
+                None=>env.clone()
+            };
+            let evluated = eval_block_statements(&body, &extended_env)?;
+
+            unwrap_return_value(evluated)
+        },
+        _=>Err(type_mismatch::not_a_function(func))
+    }
+}
+
+fn extend_func_env(outer_env:&Env,args:&Vec<Rc<Object>>, params:&Vec<String>)->Environment{
+    let mut env = Environment::new_enclosed_environment(outer_env.clone());
+    for (i,param) in params.iter().enumerate(){
+        env.set(param, args[i].clone())
+    }
+
+    env
+}
+
+fn unwrap_return_value(obj:Rc<Object>)-> Result<Rc<Object>, EvalError>{
+    match &*obj{
+        Object::ReturnValue(v)=>Ok(v.clone()),
+        _=>Ok(obj)
     }
 }
 
