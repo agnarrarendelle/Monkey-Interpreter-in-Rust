@@ -1,10 +1,10 @@
 mod error;
-use std::rc::Rc;
+use std::{rc::Rc, cell::RefCell};
 
 use crate::{
     ast::{BlockStatement, Expression, Literal, Node, Statement},
     object::Object,
-    object::environment::Env,
+    object::environment::{Env, Environment},
     token::*,
     
 
