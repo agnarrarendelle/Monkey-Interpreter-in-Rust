@@ -1,13 +1,11 @@
 mod error;
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     ast::{BlockStatement, Expression, Literal, Node, Statement},
-    object::Object,
     object::environment::{Env, Environment},
+    object::Object,
     token::*,
-    
-
 };
 
 use self::error::*;
@@ -15,7 +13,7 @@ use self::error::*;
 thread_local!(static BOOLEAN_TRUE:Rc<Object> = Rc::new(Object::Boolean(true)));
 thread_local!(static BOOLEAN_FALSE:Rc<Object> = Rc::new(Object::Boolean(false)));
 thread_local!(static NULL:Rc<Object> = Rc::new(Object::Null));
-pub fn eval(node: Node, env:&Env) -> Result<Rc<Object>, EvalError> {
+pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     match node {
         Node::Program(p) => eval_program(&p, env),
         Node::Stat(s) => eval_statements(&s, env),
@@ -23,7 +21,7 @@ pub fn eval(node: Node, env:&Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_program(p: &Vec<Statement>,env:&Env) -> Result<Rc<Object>, EvalError> {
+fn eval_program(p: &Vec<Statement>, env: &Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
     for stmt in p {
         res = eval_statements(stmt, env)?;
@@ -35,14 +33,14 @@ fn eval_program(p: &Vec<Statement>,env:&Env) -> Result<Rc<Object>, EvalError> {
     Ok(res)
 }
 
-fn eval_statements(s: &Statement, env:&Env) -> Result<Rc<Object>, EvalError> {
+fn eval_statements(s: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
     match s {
         Statement::Expression(expr) => eval_expression(expr, env),
         Statement::Return(expr) => {
             let expr = eval_expression(&expr, env)?;
             return Ok(Rc::new(Object::ReturnValue(expr)));
-        },
-        Statement::Let(identifier, expr)=>{
+        }
+        Statement::Let(identifier, expr) => {
             let value = eval_expression(&expr, env)?;
             env.borrow_mut().set(identifier, value.clone());
 
@@ -51,7 +49,7 @@ fn eval_statements(s: &Statement, env:&Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_block_statements(statements: &BlockStatement, env:&Env) -> Result<Rc<Object>, EvalError> {
+fn eval_block_statements(statements: &BlockStatement, env: &Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
 
     for s in &statements.0 {
@@ -65,29 +63,29 @@ fn eval_block_statements(statements: &BlockStatement, env:&Env) -> Result<Rc<Obj
     Ok(res)
 }
 
-fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
+fn eval_expression(e: &Expression, env: &Env) -> Result<Rc<Object>, EvalError> {
     match e {
-        Expression::Identifier(id)=>eval_identifier(id, env),
+        Expression::Identifier(id) => eval_identifier(id, env),
         Expression::Literal(lit) => eval_literal(lit),
         Expression::Prefix(operator, expr) => {
-            let right = eval_expression(expr,env)?;
+            let right = eval_expression(expr, env)?;
             return eval_prefix_expression(&operator, right.clone());
         }
         Expression::Infix(left, operator, right) => {
-            let left = eval_expression(left,env)?;
-            let right = eval_expression(right,env)?;
+            let left = eval_expression(left, env)?;
+            let right = eval_expression(right, env)?;
             return eval_infix_expression(left.clone(), operator, right.clone());
         }
         Expression::IfExpr(condition, consequence, alternative) => {
             return eval_if_expression(condition, consequence, alternative, env);
-        },
-        Expression::Func(params,body)=>{
+        }
+        Expression::Func(params, body) => {
             let params = params.clone();
             let body = body.clone();
 
             Ok(Rc::new(Object::Funtion(params, body, env.clone())))
-        },
-        Expression::FuncCall(expr, params)=>{
+        }
+        Expression::FuncCall(expr, params) => {
             let func = eval_expression(expr, env)?;
             let args = eval_expressions(params, env)?;
             apply_function(func, &args)
@@ -96,15 +94,17 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_expressions(expressions: &Vec<Expression>, env:&Env)-> Result<Vec<Rc<Object>>, EvalError> {
+fn eval_expressions(
+    expressions: &Vec<Expression>,
+    env: &Env,
+) -> Result<Vec<Rc<Object>>, EvalError> {
     let mut exprs = vec![];
-    for expr in expressions{
+    for expr in expressions {
         let res = eval_expression(expr, &env.clone())?;
         exprs.push(res);
     }
 
     Ok(exprs)
-
 }
 
 fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
@@ -114,12 +114,10 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_identifier(id:&str, env:&Env)-> Result<Rc<Object>, EvalError>{
-    match env.borrow_mut().get(id){
-        Some(obj)=>Ok(obj),
-        None=>{
-            Err(identifier_unfound::new(id))
-        }
+fn eval_identifier(id: &str, env: &Env) -> Result<Rc<Object>, EvalError> {
+    match env.borrow_mut().get(id) {
+        Some(obj) => Ok(obj),
+        None => Err(identifier_unfound::new(id)),
     }
 }
 
@@ -206,51 +204,51 @@ fn eval_boolean_infix_expression(
 }
 
 fn eval_if_expression(
-    condition: & Expression,
-    consequence: & BlockStatement,
-    alternative: & Option<BlockStatement>,
-    env:&Env
+    condition: &Expression,
+    consequence: &BlockStatement,
+    alternative: &Option<BlockStatement>,
+    env: &Env,
 ) -> Result<Rc<Object>, EvalError> {
-    let condition = eval_expression(condition,env)?;
+    let condition = eval_expression(condition, env)?;
     if is_truthy(&condition) {
-        return eval_block_statements(consequence,env);
+        return eval_block_statements(consequence, env);
     } else {
         match &alternative {
-            Some(alter) => eval_block_statements(&alter,env),
+            Some(alter) => eval_block_statements(&alter, env),
             None => Ok(access_null()),
         }
     }
 }
 
-fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
-    match &*func{
-        Object::Funtion(params,body , env)=>{
+fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>, EvalError> {
+    match &*func {
+        Object::Funtion(params, body, env) => {
             // let extended_env = Rc::new(RefCell::new(extend_func_env(&env, args, params)));
-            let extended_env = match params{
-                Some(params)=>Rc::new(RefCell::new(extend_func_env(&env, args, params))),
-                None=>env.clone()
+            let extended_env = match params {
+                Some(params) => Rc::new(RefCell::new(extend_func_env(&env, args, params))),
+                None => env.clone(),
             };
             let evluated = eval_block_statements(&body, &extended_env)?;
 
             unwrap_return_value(evluated)
-        },
-        _=>Err(type_mismatch::not_a_function(func))
+        }
+        _ => Err(type_mismatch::not_a_function(func)),
     }
 }
 
-fn extend_func_env(outer_env:&Env,args:&Vec<Rc<Object>>, params:&Vec<String>)->Environment{
+fn extend_func_env(outer_env: &Env, args: &Vec<Rc<Object>>, params: &Vec<String>) -> Environment {
     let mut env = Environment::new_enclosed_environment(outer_env.clone());
-    for (i,param) in params.iter().enumerate(){
+    for (i, param) in params.iter().enumerate() {
         env.set(param, args[i].clone())
     }
 
     env
 }
 
-fn unwrap_return_value(obj:Rc<Object>)-> Result<Rc<Object>, EvalError>{
-    match &*obj{
-        Object::ReturnValue(v)=>Ok(v.clone()),
-        _=>Ok(obj)
+fn unwrap_return_value(obj: Rc<Object>) -> Result<Rc<Object>, EvalError> {
+    match &*obj {
+        Object::ReturnValue(v) => Ok(v.clone()),
+        _ => Ok(obj),
     }
 }
 
@@ -275,9 +273,7 @@ fn access_null() -> Rc<Object> {
 mod tests {
     use std::cell::RefCell;
 
-    use crate::{
-        parser::{start_parsing}, object::environment,
-    };
+    use crate::{object::environment, parser::start_parsing};
 
     use super::*;
 
@@ -356,10 +352,9 @@ mod tests {
                 "if (10 > 1) {if (10 > 1) {return true + false;}return 1;}",
                 "Unknown Operator: true + false",
             ),
-            ("ggg", "Identifer not Found: ggg")
+            ("ggg", "Identifer not Found: ggg"),
         ];
 
         test_helper(&tests);
     }
-
 }
