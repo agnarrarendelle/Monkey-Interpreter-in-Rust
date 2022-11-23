@@ -16,7 +16,7 @@ impl Environment{
     }
 
     pub fn new_enclosed_environment(outer: Env)->Self{
-        let env =  Self::new();
+        let mut env =  Self::new();
         env.outer = Some(outer.clone());
         return env;
     }
@@ -25,7 +25,7 @@ impl Environment{
         match self.store.get(name){
             Some(obj)=>Some(Rc::clone(obj)),
             None=>{
-                match self.outer{
+                match &self.outer{
                     Some(outer)=>outer.borrow().get(name),
                     None=>None
                 }
