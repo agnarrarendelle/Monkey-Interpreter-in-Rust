@@ -71,12 +71,12 @@ fn eval_expression(e: &Expression,env:&Env) -> Result<Rc<Object>, EvalError> {
         Expression::Literal(lit) => eval_literal(lit),
         Expression::Prefix(operator, expr) => {
             let right = eval_expression(expr,env)?;
-            return eval_prefix_expression(&operator, &right.clone());
+            return eval_prefix_expression(&operator, right.clone());
         }
         Expression::Infix(left, operator, right) => {
             let left = eval_expression(left,env)?;
             let right = eval_expression(right,env)?;
-            return eval_infix_expression(&left, operator, &right);
+            return eval_infix_expression(left.clone(), operator, right.clone());
         }
         Expression::IfExpr(condition, consequence, alternative) => {
             return eval_if_expression(condition, consequence, alternative, env);
@@ -123,16 +123,16 @@ fn eval_identifier(id:&str, env:&Env)-> Result<Rc<Object>, EvalError>{
     }
 }
 
-fn eval_prefix_expression(operator: &Token, right: & Rc<Object>) -> Result<Rc<Object>, EvalError> {
+fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match operator {
-        Token::BANG => eval_bang_operator_expression(&right),
-        Token::MINUS => eval_minus_prefix_operation(&right),
-        _ => Err(unknown_operator::prefix(operator, right)),
+        Token::BANG => eval_bang_operator_expression(right.clone()),
+        Token::MINUS => eval_minus_prefix_operation(right.clone()),
+        _ => Err(unknown_operator::prefix(operator, &right)),
     }
 }
 
-fn eval_bang_operator_expression(expr: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
-    match **expr {
+fn eval_bang_operator_expression(expr: Rc<Object>) -> Result<Rc<Object>, EvalError> {
+    match *expr {
         Object::Boolean(b) => Ok(match_boolean_expression(&(!b))),
         Object::Integer(i) => {
             let b = if i == 0 { true } else { false };
@@ -143,20 +143,20 @@ fn eval_bang_operator_expression(expr: &Rc<Object>) -> Result<Rc<Object>, EvalEr
     }
 }
 
-fn eval_minus_prefix_operation(expr: &Rc<Object>) -> Result<Rc<Object>, EvalError> {
-    match **expr {
+fn eval_minus_prefix_operation(expr: Rc<Object>) -> Result<Rc<Object>, EvalError> {
+    match *expr {
         Object::Integer(i) => Ok(Rc::new(Object::Integer(-i))),
-        _ => Err(unknown_operator::minus_prefix(expr)),
+        _ => Err(unknown_operator::minus_prefix(&expr)),
     }
 }
 
 fn eval_infix_expression(
-    left_expr: &Rc<Object>,
+    left_expr: Rc<Object>,
     operator: &Token,
-    right_expr: &Rc<Object>,
+    right_expr: Rc<Object>,
 ) -> Result<Rc<Object>, EvalError> {
-    let left_val = &**left_expr;
-    let right_val = &**right_expr;
+    let left_val = &*left_expr;
+    let right_val = &*right_expr;
     match (left_val, right_val) {
         (Object::Integer(left), Object::Integer(right)) => {
             eval_integer_infix_expression(*left, operator, *right)
