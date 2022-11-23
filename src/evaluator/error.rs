@@ -25,10 +25,17 @@ pub mod unknown_operator{
 }
 
 pub mod type_mismatch{
+    use std::rc::Rc;
+
     use super::*;
     const ERROR_TYPE:&str = "Type Mismatch: ";
     pub fn type_mismatch(left:&str, t:&Token, right:&str)->EvalError{
         EvalError(format!("{}{} {} {}",ERROR_TYPE, left, t, right))
+    }
+
+    pub fn not_a_function(func: Rc<Object>)->EvalError{
+        EvalError(format!("{} is not a function", func))
+
     }
 }
 
