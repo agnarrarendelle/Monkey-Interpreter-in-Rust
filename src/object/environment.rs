@@ -24,7 +24,12 @@ impl Environment{
     pub fn get(&self,name: &str)->Option<Rc<Object>>{
         match self.store.get(name){
             Some(obj)=>Some(Rc::clone(obj)),
-            None=>None
+            None=>{
+                match self.outer{
+                    Some(outer)=>outer.borrow().get(name),
+                    None=>None
+                }
+            }
         }
     }
 
