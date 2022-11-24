@@ -13,7 +13,7 @@ use self::error::*;
 thread_local!(static BOOLEAN_TRUE:Rc<Object> = Rc::new(Object::Boolean(true)));
 thread_local!(static BOOLEAN_FALSE:Rc<Object> = Rc::new(Object::Boolean(false)));
 thread_local!(static NULL:Rc<Object> = Rc::new(Object::Null));
-pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
+pub fn eval(node: Node, env: Env) -> Result<Rc<Object>, EvalError> {
     match node {
         Node::Program(p) => eval_program(&p, env),
         Node::Stat(s) => eval_statements(&s, env),
@@ -21,10 +21,10 @@ pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_program(p: &Vec<Statement>, env: &Env) -> Result<Rc<Object>, EvalError> {
+fn eval_program(p: &Vec<Statement>, env: Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
     for stmt in p {
-        res = eval_statements(stmt, env)?;
+        res = eval_statements(stmt, env.clone())?;
 
         if let Object::ReturnValue(_) = &*res {
             return Ok(res);
@@ -33,15 +33,15 @@ fn eval_program(p: &Vec<Statement>, env: &Env) -> Result<Rc<Object>, EvalError> 
     Ok(res)
 }
 
-fn eval_statements(s: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
+fn eval_statements(s: &Statement, env: Env) -> Result<Rc<Object>, EvalError> {
     match s {
-        Statement::Expression(expr) => eval_expression(expr, env),
+        Statement::Expression(expr) => eval_expression(expr, env.clone()),
         Statement::Return(expr) => {
-            let expr = eval_expression(&expr, env)?;
+            let expr = eval_expression(&expr, env.clone())?;
             return Ok(Rc::new(Object::ReturnValue(expr)));
         }
         Statement::Let(identifier, expr) => {
-            let value = eval_expression(&expr, env)?;
+            let value = eval_expression(&expr, env.clone())?;
             env.borrow_mut().set(identifier, value.clone());
 
             Ok(value)
@@ -49,11 +49,11 @@ fn eval_statements(s: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_block_statements(statements: &BlockStatement, env: &Env) -> Result<Rc<Object>, EvalError> {
+fn eval_block_statements(statements: &BlockStatement, env: Env) -> Result<Rc<Object>, EvalError> {
     let mut res = access_null();
 
     for s in &statements.0 {
-        res = eval_statements(&s, env)?;
+        res = eval_statements(&s, env.clone())?;
 
         if let Object::ReturnValue(_) = *res {
             return Ok(res);
@@ -63,21 +63,21 @@ fn eval_block_statements(statements: &BlockStatement, env: &Env) -> Result<Rc<Ob
     Ok(res)
 }
 
-fn eval_expression(e: &Expression, env: &Env) -> Result<Rc<Object>, EvalError> {
+fn eval_expression(e: &Expression, env: Env) -> Result<Rc<Object>, EvalError> {
     match e {
-        Expression::Identifier(id) => eval_identifier(id, env),
+        Expression::Identifier(id) => eval_identifier(id, env.clone()),
         Expression::Literal(lit) => eval_literal(lit),
         Expression::Prefix(operator, expr) => {
-            let right = eval_expression(expr, env)?;
+            let right = eval_expression(expr, env.clone())?;
             return eval_prefix_expression(&operator, right.clone());
         }
         Expression::Infix(left, operator, right) => {
-            let left = eval_expression(left, env)?;
-            let right = eval_expression(right, env)?;
+            let left = eval_expression(left, env.clone())?;
+            let right = eval_expression(right, env.clone())?;
             return eval_infix_expression(left.clone(), operator, right.clone());
         }
         Expression::IfExpr(condition, consequence, alternative) => {
-            return eval_if_expression(condition, consequence, alternative, env);
+            return eval_if_expression(condition, consequence, alternative, env.clone());
         }
         Expression::Func(params, body) => {
             let params = params.clone();
@@ -86,8 +86,8 @@ fn eval_expression(e: &Expression, env: &Env) -> Result<Rc<Object>, EvalError> {
             Ok(Rc::new(Object::Funtion(params, body, env.clone())))
         }
         Expression::FuncCall(expr, params) => {
-            let func = eval_expression(expr, env)?;
-            let args = eval_expressions(params, env)?;
+            let func = eval_expression(expr, env.clone())?;
+            let args = eval_expressions(params, env.clone())?;
             apply_function(func, &args)
         }
         _ => todo!(),
@@ -96,11 +96,11 @@ fn eval_expression(e: &Expression, env: &Env) -> Result<Rc<Object>, EvalError> {
 
 fn eval_expressions(
     expressions: &Vec<Expression>,
-    env: &Env,
+    env: Env,
 ) -> Result<Vec<Rc<Object>>, EvalError> {
     let mut exprs = vec![];
     for expr in expressions {
-        let res = eval_expression(expr, &env.clone())?;
+        let res = eval_expression(expr, env.clone())?;
         exprs.push(res);
     }
 
@@ -114,7 +114,7 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_identifier(id: &str, env: &Env) -> Result<Rc<Object>, EvalError> {
+fn eval_identifier(id: &str, env: Env) -> Result<Rc<Object>, EvalError> {
     match env.borrow_mut().get(id) {
         Some(obj) => Ok(obj),
         None => Err(identifier_unfound::new(id)),
@@ -207,14 +207,14 @@ fn eval_if_expression(
     condition: &Expression,
     consequence: &BlockStatement,
     alternative: &Option<BlockStatement>,
-    env: &Env,
+    env: Env,
 ) -> Result<Rc<Object>, EvalError> {
-    let condition = eval_expression(condition, env)?;
+    let condition = eval_expression(condition, env.clone())?;
     if is_truthy(&condition) {
-        return eval_block_statements(consequence, env);
+        return eval_block_statements(consequence, env.clone());
     } else {
         match &alternative {
-            Some(alter) => eval_block_statements(&alter, env),
+            Some(alter) => eval_block_statements(&alter, env.clone()),
             None => Ok(access_null()),
         }
     }
@@ -225,10 +225,10 @@ fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>
         Object::Funtion(params, body, env) => {
             // let extended_env = Rc::new(RefCell::new(extend_func_env(&env, args, params)));
             let extended_env = match params {
-                Some(params) => Rc::new(RefCell::new(extend_func_env(&env, args, params))),
+                Some(params) => Rc::new(RefCell::new(extend_func_env(env.clone(), args, params))),
                 None => env.clone(),
             };
-            let evluated = eval_block_statements(&body, &extended_env)?;
+            let evluated = eval_block_statements(&body, extended_env)?;
 
             unwrap_return_value(evluated)
         }
@@ -236,7 +236,7 @@ fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>
     }
 }
 
-fn extend_func_env(outer_env: &Env, args: &Vec<Rc<Object>>, params: &Vec<String>) -> Environment {
+fn extend_func_env(outer_env: Env, args: &Vec<Rc<Object>>, params: &Vec<String>) -> Environment {
     let mut env = Environment::new_enclosed_environment(outer_env.clone());
     for (i, param) in params.iter().enumerate() {
         env.set(param, args[i].clone())
@@ -281,7 +281,7 @@ mod tests {
         let env = Rc::new(RefCell::new(environment::Environment::new()));
         for (input, expected) in cases {
             let node = start_parsing(input).unwrap();
-            match eval(node, &env) {
+            match eval(node, env.clone()) {
                 Ok(evaluated) => assert_eq!(expected, &format!("{}", evaluated)),
                 Err(err) => assert_eq!(expected, &format!("{}", err)),
             }
