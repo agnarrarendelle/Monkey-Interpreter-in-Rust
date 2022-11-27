@@ -9,6 +9,7 @@ use self::environment::Env;
 pub enum Object {
     Integer(i64),
     Boolean(bool),
+    String(String),
     ReturnValue(Rc<Object>),
     Funtion(Option<Vec<String>>, BlockStatement, Env),
     Null
@@ -19,6 +20,7 @@ impl fmt::Display for Object {
         match self {
             Object::Integer(i) => write!(f, "{}", i),
             Object::Boolean(b) => write!(f, "{}", b),
+            Object::String(s)=>write!(f, "{}", s),
             Object::ReturnValue(v)=> write!(f, "{}", v),
             Object::Funtion(params, body, _)=>{
                 match params{
@@ -36,6 +38,7 @@ impl Object{
         match self {
             Object::Integer(i) => format!("Integer({})", i),
             Object::Boolean(b) => format!("Boolean({})", b),
+            Object::String(s) => format!("String(\"{}\")", s),
             Object::ReturnValue(v)=> format!("{}", v),
             Object::Funtion(params, body, _)=>{
                 match params{
