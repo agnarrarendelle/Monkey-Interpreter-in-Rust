@@ -112,6 +112,7 @@ impl Parser {
                 Err(_) => Err(ParseError::parse_integer_error(x)),
             },
             Token::BOOLEAN(b) => Ok(Expression::Literal(Literal::Bool(*b))),
+            Token::STRING(s)=>Ok(Expression::Literal(Literal::String(s.to_string()))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             Token::LPAREN => self.parse_group_expression(),
             Token::IF => self.parse_if_expression(),
