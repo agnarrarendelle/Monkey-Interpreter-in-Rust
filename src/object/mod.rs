@@ -2,7 +2,7 @@ pub(crate) mod environment;
 use std::{fmt, rc::Rc};
 
 use crate::ast::BlockStatement;
-
+use crate::evaluator::builtins::Builtin;
 use self::environment::Env;
 
 #[derive(PartialEq, Debug)]
@@ -12,6 +12,7 @@ pub enum Object {
     String(String),
     ReturnValue(Rc<Object>),
     Funtion(Option<Vec<String>>, BlockStatement, Env),
+    Builtin(Builtin),
     Null
 }
 
@@ -27,7 +28,8 @@ impl fmt::Display for Object {
                     Some(params)=> writeln!(f, "fn({}) {{\n{}\n}}", params.join(", "), body),
                     None=>writeln!(f, "fn() {{\n{}\n}}", body),
                 }
-            }
+            },
+            Object::Builtin(b)=>write!(f, "{}", b),
             Object::Null => write!(f, "NULL"),
         }
     }
@@ -46,6 +48,7 @@ impl Object{
                     None=>format!("Function() {{\n{}\n}}", body),
                 }
             }
+            Object::Builtin(b)=>format!("Builtin Function {}", b),
             Object::Null => format!("NULL"),
         }
     }
