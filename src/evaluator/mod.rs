@@ -1,3 +1,4 @@
+pub mod builtins;
 mod error;
 use std::{cell::RefCell, rc::Rc};
 
@@ -8,7 +9,7 @@ use crate::{
     token::*,
 };
 
-use self::error::*;
+use self::{builtins::Builtin, error::*};
 
 thread_local!(static BOOLEAN_TRUE:Rc<Object> = Rc::new(Object::Boolean(true)));
 thread_local!(static BOOLEAN_FALSE:Rc<Object> = Rc::new(Object::Boolean(false)));
@@ -113,13 +114,13 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
 }
 
 fn eval_identifier(id: &str, env: Env) -> Result<Rc<Object>, EvalError> {
-     if let Some(obj) =env.borrow_mut().get(id){
+    if let Some(obj) = env.borrow_mut().get(id) {
         Ok(obj)
-     }else if let Some(func) = Builtin::search(id){
+    } else if let Some(func) = Builtin::search(id) {
         Ok(Rc::new(func))
-     }else{
+    } else {
         Err(identifier_unfound::new(id))
-     }
+    }
 }
 
 fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Object>, EvalError> {
@@ -163,9 +164,7 @@ fn eval_infix_expression(
         (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(*left, operator, *right)
         }
-        (Object::String(s1), Object::String(s2)) => {
-            eval_string_infix_expression(s1, operator, s2)
-        }
+        (Object::String(s1), Object::String(s2)) => eval_string_infix_expression(s1, operator, s2),
         _ => Err(type_mismatch::type_mismatch(
             &left_val.get_type(),
             operator,
@@ -212,9 +211,9 @@ fn eval_string_infix_expression(
     operator: &Token,
     s2: &str,
 ) -> Result<Rc<Object>, EvalError> {
-    match operator{
-        Token::PLUS=>Ok(Rc::new(Object::String((s1.to_string()+s2)))),
-        _=>Err(unknown_operator::infix(s1, operator, s2))
+    match operator {
+        Token::PLUS => Ok(Rc::new(Object::String((s1.to_string() + s2)))),
+        _ => Err(unknown_operator::infix(s1, operator, s2)),
     }
 }
 
@@ -247,6 +246,7 @@ fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>
 
             unwrap_return_value(evluated)
         }
+        Object::Builtin(builtin) => builtin.apply(args),
         _ => Err(type_mismatch::not_a_function(func)),
     }
 }
