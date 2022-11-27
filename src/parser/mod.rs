@@ -252,13 +252,13 @@ impl Parser {
         &mut self,
         expression: Expression,
     ) -> Result<Expression, ParseError> {
-        let args = self.parse_func_call_arguments()?;
+        let args = self.parse_expression_list(&Token::RPAREN)?;
         Ok(Expression::FuncCall(Box::new(expression), args))
     }
 
-    fn parse_func_call_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
+    fn parse_expression_list(&mut self, end:&Token) -> Result<Vec<Expression>, ParseError> {
         let mut args: Vec<Expression> = vec![];
-        if self.peek_token_is(&Token::RPAREN){
+        if self.peek_token_is(end){
             self.next_token();
             return Ok(args);
         }
@@ -274,6 +274,11 @@ impl Parser {
 
         self.expect_peek_token(&Token::RPAREN)?;
         Ok(args)
+    }
+
+    fn parse_array_literal(&mut self)->Result<Expression, ParseError>{
+        let array_elems = self.parse_expression_list(&Token::RBRACKET)?;
+        Ok(Expression::Literal(Literal::Array(array_elems)))
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
