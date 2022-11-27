@@ -357,4 +357,13 @@ mod tests {
 
         test_helper(&tests);
     }
+
+    #[test]
+    fn test_closure(){
+        let tests = [
+           ("let newAdder = fn(x) {fn(y) { x + y };};let addTwo = newAdder(2);addTwo(2);","4") 
+        ];
+
+        test_helper(&tests);
+    }
 }
