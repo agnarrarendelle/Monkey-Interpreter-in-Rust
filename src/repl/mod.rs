@@ -33,7 +33,7 @@ pub fn start(input: impl Read, _output: impl Write) {
                     }
                 }
                 Ok(p) => {
-                    let evaluated = eval(crate::ast::Node::Program(p), &env);
+                    let evaluated = eval(crate::ast::Node::Program(p), env.clone());
                     match evaluated{
                         Ok(res)=>{
 
