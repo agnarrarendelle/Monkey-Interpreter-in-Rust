@@ -94,10 +94,7 @@ fn eval_expression(e: &Expression, env: Env) -> Result<Rc<Object>, EvalError> {
     }
 }
 
-fn eval_expressions(
-    expressions: &Vec<Expression>,
-    env: Env,
-) -> Result<Vec<Rc<Object>>, EvalError> {
+fn eval_expressions(expressions: &Vec<Expression>, env: Env) -> Result<Vec<Rc<Object>>, EvalError> {
     let mut exprs = vec![];
     for expr in expressions {
         let res = eval_expression(expr, env.clone())?;
@@ -111,7 +108,7 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
-        Literal::String(s)=>Ok(Rc::new(Object::String(s.to_string())))
+        Literal::String(s) => Ok(Rc::new(Object::String(s.to_string()))),
     }
 }
 
@@ -163,6 +160,9 @@ fn eval_infix_expression(
         (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(*left, operator, *right)
         }
+        (Object::String(s1), Object::String(s2)) => {
+            eval_string_infix_expression(s1, operator, s2)
+        }
         _ => Err(type_mismatch::type_mismatch(
             &left_val.get_type(),
             operator,
@@ -202,6 +202,17 @@ fn eval_boolean_infix_expression(
 
         _ => return Err(unknown_operator::infix(left, operator, right)),
     };
+}
+
+fn eval_string_infix_expression(
+    s1: &str,
+    operator: &Token,
+    s2: &str,
+) -> Result<Rc<Object>, EvalError> {
+    match operator{
+        Token::PLUS=>Ok(Rc::new(Object::String((s1.to_string()+s2)))),
+        _=>Err(unknown_operator::infix(s1, operator, s2))
+    }
 }
 
 fn eval_if_expression(
@@ -360,10 +371,11 @@ mod tests {
     }
 
     #[test]
-    fn test_closure(){
-        let tests = [
-           ("let newAdder = fn(x) {fn(y) { x + y };};let addTwo = newAdder(2);addTwo(2);","4") 
-        ];
+    fn test_closure() {
+        let tests = [(
+            "let newAdder = fn(x) {fn(y) { x + y };};let addTwo = newAdder(2);addTwo(2);",
+            "4",
+        )];
 
         test_helper(&tests);
     }
