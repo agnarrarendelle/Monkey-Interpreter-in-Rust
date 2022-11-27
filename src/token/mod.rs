@@ -36,6 +36,8 @@ pub enum Token  {
     IF,
     ELSE,
     RETURN,
+
+    STRING(String)
 }
 
 
@@ -82,6 +84,7 @@ impl fmt::Display for Token {
             Token::ELSE => write!(f, "else"),
             Token::EOF=>write!(f, "EOF"),
             Token::ILLEGAL => write!(f, "invalid token"),
+            Token::STRING(s) => write!(f, "{}",s),
         }
     }
 }
