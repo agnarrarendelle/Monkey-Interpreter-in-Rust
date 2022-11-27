@@ -29,7 +29,7 @@ impl fmt::Display for Object {
                     None=>writeln!(f, "fn() {{\n{}\n}}", body),
                 }
             },
-            Object::Builtin(b)=>write!(f, "{}", b),
+            Object::Builtin(b)=>write!(f, "Builtin Function: {}", b),
             Object::Null => write!(f, "NULL"),
         }
     }
