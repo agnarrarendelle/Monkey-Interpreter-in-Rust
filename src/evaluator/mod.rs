@@ -113,10 +113,13 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
 }
 
 fn eval_identifier(id: &str, env: Env) -> Result<Rc<Object>, EvalError> {
-    match env.borrow_mut().get(id) {
-        Some(obj) => Ok(obj),
-        None => Err(identifier_unfound::new(id)),
-    }
+     if let Some(obj) =env.borrow_mut().get(id){
+        Ok(obj)
+     }else if let Some(func) = Builtin::search(id){
+        Ok(Rc::new(func))
+     }else{
+        Err(identifier_unfound::new(id))
+     }
 }
 
 fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Object>, EvalError> {
