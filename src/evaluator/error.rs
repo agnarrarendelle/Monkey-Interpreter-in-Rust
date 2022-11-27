@@ -35,7 +35,14 @@ pub mod type_mismatch{
 
     pub fn not_a_function(func: Rc<Object>)->EvalError{
         EvalError(format!("{} is not a function", func))
+    }
 
+    pub fn argument_type_unsupported(obj:Rc<Object>, func_name:&str)->EvalError{
+        EvalError(format!("Argument {} of type {} is not supported by function {}", obj, obj.get_type(), func_name))
+    }
+
+    pub fn wrong_argument_number(func_name:&str, expect:i64, actual:i64)->EvalError{
+        EvalError(format!("Function {} expected {} arguments, but got {}", func_name, expect, actual))
     }
 }
 
