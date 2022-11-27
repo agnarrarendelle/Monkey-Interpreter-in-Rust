@@ -111,6 +111,7 @@ fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
+        Literal::String(s)=>Ok(Rc::new(Object::String(s.to_string())))
     }
 }
 
