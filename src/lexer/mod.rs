@@ -72,6 +72,10 @@ impl Lexer {
             '>' => Token::GT,
             '{' => Token::LBRACE,
             '}' => Token::RBRACE,
+            '"'=> {
+                let s = self.read_string();
+                Token::STRING(s)
+            },
             ZERO_NULL => Token::EOF,
             other => {
                 if is_letter(other) {
@@ -105,6 +109,19 @@ impl Lexer {
 
         let s: String = (self.input[curr_pos..self.position]).iter().collect();
         s
+    }
+
+    fn read_string(&mut self)->String{
+        let pos = self.position+1;
+        loop{
+            self.read_char();
+            if self.ch == '"' || self.ch == '\0'{
+                break;
+            }
+        }
+        
+        let s = &(self.input[pos..self.position]);
+        s.iter().collect::<String>()
     }
 
     fn skip_whitespace(&mut self) {
@@ -146,6 +163,8 @@ mod tests {
         10 == 10;
         10 != 9;
 
+        \"foobar\"
+        \"foo bar\"
         ";
         let tests = vec![
         Token::LET,
@@ -221,6 +240,8 @@ mod tests {
         Token::NOTEQ,
         Token::INT("9".to_string()),
         Token::SEMICOLON,
+        Token::STRING("foobar".to_string()),
+        Token::STRING("foo bar".to_string()),
         Token::EOF,
         ];
 
