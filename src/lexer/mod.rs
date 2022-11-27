@@ -72,6 +72,8 @@ impl Lexer {
             '>' => Token::GT,
             '{' => Token::LBRACE,
             '}' => Token::RBRACE,
+            '['=>Token::LBRACKET,
+            ']'=>Token::RBRACKET,
             '"'=> {
                 let s = self.read_string();
                 Token::STRING(s)
