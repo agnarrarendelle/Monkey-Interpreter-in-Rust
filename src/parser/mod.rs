@@ -257,6 +257,10 @@ impl Parser {
 
     fn parse_func_call_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
         let mut args: Vec<Expression> = vec![];
+        if self.peek_token_is(&Token::RPAREN){
+            self.next_token();
+            return Ok(args);
+        }
 
         self.next_token();
         args.push(self.parse_expression(Precedence::LOWEST)?);
