@@ -103,7 +103,8 @@ impl fmt::Display for Expression {
 pub enum Literal {
     Integer(i64),
     Bool(bool),
-    String(String)
+    String(String),
+    Array(Vec<Expression>)
 }
 
 impl fmt::Display for Literal {
@@ -112,6 +113,7 @@ impl fmt::Display for Literal {
             Self::Integer(int) => write!(f, "{}", int),
             Self::Bool(bool) => write!(f, "{}", bool),
             Self::String(s) => write!(f, "\"{}\"", s),
+            Self::Array(exprs)=>write!(f, "{}", format(&exprs, ", "))
         }
     }
 }
