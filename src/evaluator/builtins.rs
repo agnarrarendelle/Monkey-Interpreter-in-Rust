@@ -50,7 +50,7 @@ impl Builtin {
             Builtin::First => {
                 if args.len() != 1 {
                     return Err(type_mismatch::wrong_argument_number(
-                        "len",
+                        "first",
                         1,
                         args.len() as i64,
                     ));
@@ -76,7 +76,7 @@ impl Builtin {
             Builtin::Last => {
                 if args.len() != 1 {
                     return Err(type_mismatch::wrong_argument_number(
-                        "len",
+                        "last",
                         1,
                         args.len() as i64,
                     ));
@@ -101,7 +101,7 @@ impl Builtin {
             Builtin::Rest => {
                 if args.len() != 1 {
                     return Err(type_mismatch::wrong_argument_number(
-                        "len",
+                        "rest",
                         1,
                         args.len() as i64,
                     ));
@@ -120,6 +120,35 @@ impl Builtin {
                     _ => Err(type_mismatch::argument_type_unsupported(
                         args[0].clone(),
                         "rest",
+                    )),
+                }
+            }
+            Builtin::Push => {
+                if args.len() != 2 {
+                    return Err(type_mismatch::wrong_argument_number(
+                        "push",
+                        2,
+                        args.len() as i64,
+                    ));
+                }
+                let new_elem = Rc::new((*args[1]).clone());
+                match &*args[0] {
+                    Object::String(s) => match &*new_elem {
+                        Object::String(new_elem) => {
+                            let mut new_str = s.clone();
+                            new_str.push_str(&new_elem);
+                            return Ok(Rc::new(Object::String(new_str)))
+                        }
+                        _ => Err(type_mismatch::operation_unsupported(&new_elem)),
+                    },
+                    Object::Array(arr) => {
+                        let mut new_arr = arr.clone();
+                        new_arr.push(new_elem);
+                        Ok(Rc::new(Object::Array(new_arr)))
+                    }
+                    _ => Err(type_mismatch::argument_type_unsupported(
+                        args[0].clone(),
+                        "push",
                     )),
                 }
             }
