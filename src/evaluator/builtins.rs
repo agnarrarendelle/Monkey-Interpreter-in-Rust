@@ -4,11 +4,12 @@ use crate::object::Object;
 
 use super::{error::*, check_container_index};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Builtin {
     Len,
     First,
-    Last
+    Last,
+    Rest
 }
 
 impl Builtin {
@@ -17,6 +18,7 @@ impl Builtin {
             "len"=>Object::Builtin(Builtin::Len),
             "first"=>Object::Builtin(Builtin::First),
             "last"=>Object::Builtin(Builtin::Last),
+            "rest"=>Object::Builtin(Builtin::Rest),
             _=>return  None
         };
 
@@ -52,7 +54,7 @@ impl Builtin {
                         
                         Ok(arr[0].clone())
                     },
-                    _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "len")),
+                    _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "first")),
                 }
             },
             Builtin::Last=>{
@@ -70,7 +72,27 @@ impl Builtin {
                         
                         Ok(arr[arr.len()-1].clone())
                     },
-                    _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "len")),
+                    _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "last")),
+                }
+            },
+            Builtin::Rest=>{
+                if args.len() != 1 {
+                    return Err(type_mismatch::wrong_argument_number("len", 1, args.len() as i64));
+                }
+
+                match &*args[0] {
+                    Object::String(s) => {
+                        Ok(Rc::new(Object::String(s[1..].to_string())))
+                    },
+                    Object::Array(arr) => {
+                        let mut rest_arr = vec![];
+                        for i in 1..arr.len(){
+                            let copied_obj = Rc::new((*(arr[i])).clone());
+                            rest_arr.push(copied_obj)
+                        }
+                        Ok(Rc::new(Object::Array(rest_arr)))
+                    },
+                    _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "rest")),
                 }
             }
 
@@ -84,6 +106,7 @@ impl fmt::Display for Builtin {
             Builtin::Len => write!(f, "len"),
             Builtin::First => write!(f, "first"),
             Builtin::Last => write!(f, "last"),
+            Builtin::Rest => write!(f, "rest"),
         }
     }
 }
