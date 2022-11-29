@@ -44,6 +44,10 @@ pub mod type_mismatch{
     pub fn wrong_argument_number(func_name:&str, expect:i64, actual:i64)->EvalError{
         EvalError(format!("Function {} expected {} arguments, but got {}", func_name, expect, actual))
     }
+
+    pub fn operation_unsupported(obj:&Object)->EvalError{
+        EvalError(format!("Object of type {} is not supported by this operation", obj.get_type()))
+    }
 }
 
 pub mod identifier_unfound{
@@ -54,6 +58,13 @@ pub mod identifier_unfound{
     }
 }
 
+pub fn array_index_invalid(index:i64)->EvalError{
+    EvalError(format!("index {} is invalid",index))
+}
+
+pub fn array_index_out_of_bound(index:i64)->EvalError{
+    EvalError(format!("index {} exceeds the container length",index))
+}
 // impl EvalError{
 //     pub fn new(err: String)->Self{
 //         Self(err)
