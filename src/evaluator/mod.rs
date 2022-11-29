@@ -67,7 +67,7 @@ fn eval_block_statements(statements: &BlockStatement, env: Env) -> Result<Rc<Obj
 fn eval_expression(e: &Expression, env: Env) -> Result<Rc<Object>, EvalError> {
     match e {
         Expression::Identifier(id) => eval_identifier(id, env.clone()),
-        Expression::Literal(lit) => eval_literal(lit),
+        Expression::Literal(lit) => eval_literal(lit, env.clone()),
         Expression::Prefix(operator, expr) => {
             let right = eval_expression(expr, env.clone())?;
             return eval_prefix_expression(&operator, right.clone());
@@ -105,11 +105,15 @@ fn eval_expressions(expressions: &Vec<Expression>, env: Env) -> Result<Vec<Rc<Ob
     Ok(exprs)
 }
 
-fn eval_literal(lit: &Literal) -> Result<Rc<Object>, EvalError> {
+fn eval_literal(lit: &Literal,env: Env) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
         Literal::String(s) => Ok(Rc::new(Object::String(s.to_string()))),
+        Literal::Array(elems)=>{
+            let elems = eval_expressions(elems, env)?;
+            Ok(Rc::new(Object::Array(elems)))
+        }
     }
 }
 
