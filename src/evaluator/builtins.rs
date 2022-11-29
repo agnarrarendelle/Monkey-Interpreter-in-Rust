@@ -11,7 +11,6 @@ pub enum Builtin {
     Last,
     Rest,
     Push,
-    Map
 }
 
 impl Builtin {
@@ -55,14 +54,6 @@ impl Builtin {
         }
     }
 }
-
-// fn iter(arr:&Vec<Rc<Object>>, curr: Rc<Object>)->Vec<Rc<Object>>{
-//     if arr.len() == 0{
-//         return curr;
-//     }
-
-//     iter(, curr)
-// }
 
 pub fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
@@ -181,7 +172,6 @@ impl fmt::Display for Builtin {
             Builtin::Last => write!(f, "last"),
             Builtin::Rest => write!(f, "rest"),
             Builtin::Push => write!(f, "push"),
-            Builtin::Map => write!(f, "map"),
         }
     }
 }
