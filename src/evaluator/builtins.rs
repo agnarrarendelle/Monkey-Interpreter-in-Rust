@@ -11,6 +11,7 @@ pub enum Builtin {
     Last,
     Rest,
     Push,
+    Map
 }
 
 impl Builtin {
@@ -47,112 +48,128 @@ impl Builtin {
                     )),
                 }
             }
-            Builtin::First => {
-                if args.len() != 1 {
-                    return Err(type_mismatch::wrong_argument_number(
-                        "first",
-                        1,
-                        args.len() as i64,
-                    ));
-                }
-
-                match &*args[0] {
-                    Object::String(s) => {
-                        check_container_index(0, s.len())?;
-                        let char = s.chars().nth(0).unwrap();
-                        Ok(Rc::new(Object::String(char.to_string())))
-                    }
-                    Object::Array(arr) => {
-                        check_container_index(0, arr.len())?;
-
-                        Ok(arr[0].clone())
-                    }
-                    _ => Err(type_mismatch::argument_type_unsupported(
-                        args[0].clone(),
-                        "first",
-                    )),
-                }
-            }
-            Builtin::Last => {
-                if args.len() != 1 {
-                    return Err(type_mismatch::wrong_argument_number(
-                        "last",
-                        1,
-                        args.len() as i64,
-                    ));
-                }
-                match &*args[0] {
-                    Object::String(s) => {
-                        check_container_index(0, s.len())?;
-                        let char = s.chars().nth(s.len() - 1).unwrap();
-                        Ok(Rc::new(Object::String(char.to_string())))
-                    }
-                    Object::Array(arr) => {
-                        check_container_index(0, arr.len())?;
-
-                        Ok(arr[arr.len() - 1].clone())
-                    }
-                    _ => Err(type_mismatch::argument_type_unsupported(
-                        args[0].clone(),
-                        "last",
-                    )),
-                }
-            }
-            Builtin::Rest => {
-                if args.len() != 1 {
-                    return Err(type_mismatch::wrong_argument_number(
-                        "rest",
-                        1,
-                        args.len() as i64,
-                    ));
-                }
-
-                match &*args[0] {
-                    Object::String(s) => Ok(Rc::new(Object::String(s[1..].to_string()))),
-                    Object::Array(arr) => {
-                        let mut rest_arr = vec![];
-                        for i in 1..arr.len() {
-                            let copied_obj = Rc::new((*(arr[i])).clone());
-                            rest_arr.push(copied_obj)
-                        }
-                        Ok(Rc::new(Object::Array(rest_arr)))
-                    }
-                    _ => Err(type_mismatch::argument_type_unsupported(
-                        args[0].clone(),
-                        "rest",
-                    )),
-                }
-            }
-            Builtin::Push => {
-                if args.len() != 2 {
-                    return Err(type_mismatch::wrong_argument_number(
-                        "push",
-                        2,
-                        args.len() as i64,
-                    ));
-                }
-                let new_elem = Rc::new((*args[1]).clone());
-                match &*args[0] {
-                    Object::String(s) => match &*new_elem {
-                        Object::String(new_elem) => {
-                            let mut new_str = s.clone();
-                            new_str.push_str(&new_elem);
-                            return Ok(Rc::new(Object::String(new_str)))
-                        }
-                        _ => Err(type_mismatch::operation_unsupported(&new_elem)),
-                    },
-                    Object::Array(arr) => {
-                        let mut new_arr = arr.clone();
-                        new_arr.push(new_elem);
-                        Ok(Rc::new(Object::Array(new_arr)))
-                    }
-                    _ => Err(type_mismatch::argument_type_unsupported(
-                        args[0].clone(),
-                        "push",
-                    )),
-                }
-            }
+            Builtin::First =>first(args),
+            Builtin::Last => last(args),
+            Builtin::Rest => rest(args),
+            Builtin::Push => push(args)
         }
+    }
+}
+
+// fn iter(arr:&Vec<Rc<Object>>, curr: Rc<Object>)->Vec<Rc<Object>>{
+//     if arr.len() == 0{
+//         return curr;
+//     }
+
+//     iter(, curr)
+// }
+
+pub fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+    if args.len() != 1 {
+        return Err(type_mismatch::wrong_argument_number(
+            "first",
+            1,
+            args.len() as i64,
+        ));
+    }
+
+    match &*args[0] {
+        Object::String(s) => {
+            check_container_index(0, s.len())?;
+            let char = s.chars().nth(0).unwrap();
+            Ok(Rc::new(Object::String(char.to_string())))
+        }
+        Object::Array(arr) => {
+            check_container_index(0, arr.len())?;
+
+            Ok(arr[0].clone())
+        }
+        _ => Err(type_mismatch::argument_type_unsupported(
+            args[0].clone(),
+            "first",
+        )),
+    }
+}
+
+pub fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+    if args.len() != 1 {
+        return Err(type_mismatch::wrong_argument_number(
+            "last",
+            1,
+            args.len() as i64,
+        ));
+    }
+    match &*args[0] {
+        Object::String(s) => {
+            check_container_index(0, s.len())?;
+            let char = s.chars().nth(s.len() - 1).unwrap();
+            Ok(Rc::new(Object::String(char.to_string())))
+        }
+        Object::Array(arr) => {
+            check_container_index(0, arr.len())?;
+
+            Ok(arr[arr.len() - 1].clone())
+        }
+        _ => Err(type_mismatch::argument_type_unsupported(
+            args[0].clone(),
+            "last",
+        )),
+    }
+}
+
+pub fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+    if args.len() != 1 {
+        return Err(type_mismatch::wrong_argument_number(
+            "rest",
+            1,
+            args.len() as i64,
+        ));
+    }
+
+    match &*args[0] {
+        Object::String(s) => Ok(Rc::new(Object::String(s[1..].to_string()))),
+        Object::Array(arr) => {
+            let mut rest_arr = vec![];
+            for i in 1..arr.len() {
+                let copied_obj = Rc::new((*(arr[i])).clone());
+                rest_arr.push(copied_obj)
+            }
+            Ok(Rc::new(Object::Array(rest_arr)))
+        }
+        _ => Err(type_mismatch::argument_type_unsupported(
+            args[0].clone(),
+            "rest",
+        )),
+    }
+}
+
+pub fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+    if args.len() != 2 {
+        return Err(type_mismatch::wrong_argument_number(
+            "push",
+            2,
+            args.len() as i64,
+        ));
+    }
+    let new_elem = Rc::new((*args[1]).clone());
+    match &*args[0] {
+        Object::String(s) => match &*new_elem {
+            Object::String(new_elem) => {
+                let mut new_str = s.clone();
+                new_str.push_str(&new_elem);
+                return Ok(Rc::new(Object::String(new_str)))
+            }
+            _ => Err(type_mismatch::operation_unsupported(&new_elem)),
+        },
+        Object::Array(arr) => {
+            let mut new_arr = arr.clone();
+            new_arr.push(new_elem);
+            Ok(Rc::new(Object::Array(new_arr)))
+        }
+        _ => Err(type_mismatch::argument_type_unsupported(
+            args[0].clone(),
+            "push",
+        )),
     }
 }
 
@@ -164,6 +181,7 @@ impl fmt::Display for Builtin {
             Builtin::Last => write!(f, "last"),
             Builtin::Rest => write!(f, "rest"),
             Builtin::Push => write!(f, "push"),
+            Builtin::Map => write!(f, "map"),
         }
     }
 }
