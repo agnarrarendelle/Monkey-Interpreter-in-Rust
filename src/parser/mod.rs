@@ -278,7 +278,7 @@ impl Parser {
             args.push(self.parse_expression(Precedence::LOWEST)?);
         }
 
-        self.expect_peek_token(&Token::RPAREN)?;
+        self.expect_peek_token(end)?;
         Ok(args)
     }
 
