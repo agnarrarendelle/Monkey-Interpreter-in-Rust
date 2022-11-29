@@ -8,7 +8,8 @@ pub enum Precedence {
 	SUM,         // +
 	PRODUCT,     // *
 	PREFIX,      // -X or !X
-	CALL        // myFunction(X)
+	CALL,
+    INDEX        // myFunction(X)
 }
 
 pub fn token_to_precedence(token: &Token)->Precedence{
@@ -18,6 +19,7 @@ pub fn token_to_precedence(token: &Token)->Precedence{
         Token::PLUS | Token::MINUS=>Precedence::SUM,
         Token::SLASH | Token::ASTERISK=>Precedence::PRODUCT,
         Token::LPAREN=>Precedence::CALL,
+        Token::LBRACKET=>Precedence::INDEX,
         _=>Precedence::LOWEST
     }
 }
