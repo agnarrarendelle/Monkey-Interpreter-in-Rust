@@ -91,7 +91,11 @@ fn eval_expression(e: &Expression, env: Env) -> Result<Rc<Object>, EvalError> {
             let args = eval_expressions(params, env.clone())?;
             apply_function(func, &args)
         }
-        _ => todo!(),
+        Expression::Index(left, index) => {
+            let left = eval_expression(left, env.clone())?;
+            let index = eval_expression(index, env.clone())?;
+            eval_index_expression(left, index)
+        }
     }
 }
 
