@@ -288,6 +288,18 @@ fn match_boolean_expression(b: &bool) -> Rc<Object> {
 fn access_null() -> Rc<Object> {
     NULL.with(|n| n.clone())
 }
+
+fn check_container_index(index: i64, container_size: usize) -> Result<(), EvalError> {
+    if index < 0 {
+        return Err(array_index_invalid(index));
+    }
+
+    if index as usize >= container_size {
+        return Err(array_index_out_of_bound(index));
+    }
+
+    Ok(())
+}
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
