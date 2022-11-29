@@ -135,6 +135,24 @@ fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Obje
     }
 }
 
+fn eval_index_expression(left: Rc<Object>, index: Rc<Object>) -> Result<Rc<Object>, EvalError> {
+    match *index {
+        Object::Integer(index) => match &*left {
+            Object::Array(arr) => {
+                check_container_index(index, arr.len())?;
+                Ok(arr[index as usize].clone())
+            }
+            Object::String(string) => {
+                check_container_index(index, string.len())?;
+                let char = string.chars().nth(index as usize).unwrap();
+                Ok(Rc::new(Object::String(char.to_string())))
+            }
+            _ => Err(type_mismatch::operation_unsupported(&*left)),
+        },
+        _ => Err(type_mismatch::operation_unsupported(&*index)),
+    }
+}
+
 fn eval_bang_operator_expression(expr: Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match *expr {
         Object::Boolean(b) => Ok(match_boolean_expression(&(!b))),
