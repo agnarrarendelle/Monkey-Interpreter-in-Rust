@@ -115,6 +115,7 @@ impl Parser {
             Token::STRING(s)=>Ok(Expression::Literal(Literal::String(s.to_string()))),
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             Token::LPAREN => self.parse_group_expression(),
+            Token::LBRACKET=>self.parse_array_literal(),
             Token::IF => self.parse_if_expression(),
             Token::FUNCTION => self.parse_function_expression(),
             _ => Err(ParseError::unrecognizable_token_error()),
@@ -137,6 +138,11 @@ impl Parser {
                     self.next_token();
                     left_expr = self.parse_func_call_expression(left_expr.unwrap())
                 }
+                Token::LBRACKET=>{
+                    self.next_token();
+                    left_expr = self.parse_index_expression(left_expr.unwrap())
+
+                },
                 _ => todo!(),
             }
         }
@@ -279,6 +285,14 @@ impl Parser {
     fn parse_array_literal(&mut self)->Result<Expression, ParseError>{
         let array_elems = self.parse_expression_list(&Token::RBRACKET)?;
         Ok(Expression::Literal(Literal::Array(array_elems)))
+    }
+
+    fn parse_index_expression(&mut self, left_expr: Expression)->Result<Expression, ParseError>{
+        self.next_token();
+        let index = self.parse_expression(Precedence::LOWEST)?;
+        self.expect_peek_token(&Token::RBRACKET)?;
+
+        Ok(Expression::Index(Box::new(left_expr), Box::new(index)))
     }
 
     fn curr_token_is(&self, token_type: &Token) -> bool {
