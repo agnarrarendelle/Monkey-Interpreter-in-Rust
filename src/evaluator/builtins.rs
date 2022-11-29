@@ -22,12 +22,13 @@ impl Builtin {
     pub fn apply(&self, args: &Vec<Rc<Object>>) -> Result<Rc<Object>, EvalError> {
         match self {
             Builtin::Len => {
-                if (args.len() != 1) {
+                if args.len() != 1 {
                     return Err(type_mismatch::wrong_argument_number("len", 1, args.len() as i64));
                 }
 
                 match &*args[0] {
                     Object::String(s) => Ok(Rc::new(Object::Integer(s.len() as i64))),
+                    Object::Array(arr) => Ok(Rc::new(Object::Integer(arr.len() as i64))),
                     _ => Err(type_mismatch::argument_type_unsupported(args[0].clone(), "len")),
                 }
             }
