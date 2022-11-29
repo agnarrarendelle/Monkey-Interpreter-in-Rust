@@ -5,7 +5,7 @@ use self::environment::Env;
 use crate::ast::BlockStatement;
 use crate::evaluator::builtins::Builtin;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Object {
     Integer(i64),
     Boolean(bool),
