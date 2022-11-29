@@ -58,6 +58,7 @@ pub enum Expression {
     Literal(Literal),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
+    Index(Box<Expression>,Box<Expression>),
     IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
     Func(Option<Vec<String>>, BlockStatement),
     FuncCall(Box<Expression>, Vec<Expression>),
@@ -71,7 +72,8 @@ impl fmt::Display for Expression {
             Expression::Prefix(tok, expr) => write!(f, "({}{})", tok, expr),
             Expression::Infix(left_expr, tok, right_expr) => {
                 write!(f, "({}{}{})", left_expr, tok, right_expr)
-            }
+            },
+            Expression::Index(left, index)=>write!(f, "({}[{}])", left, index),
             Expression::IfExpr(condition, consequence, alternative) => {
                 let condition_expr = format!("{}", condition);
                 let consequence_expr = format!("{}", consequence);
