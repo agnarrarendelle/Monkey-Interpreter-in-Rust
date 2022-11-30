@@ -25,6 +25,7 @@ pub enum Token  {
 
     COMMA,
     SEMICOLON,
+    COLON,
 
     LPAREN,
     RPAREN,
@@ -74,6 +75,7 @@ impl fmt::Display for Token {
             Token::EQ => write!(f, "=="),
             Token::NOTEQ => write!(f, "!="),
             Token::COMMA => write!(f, ","),
+            Token::COLON => write!(f, ":"),
             Token::SEMICOLON => write!(f, ";"),
             Token::LPAREN => write!(f, "("),
             Token::RPAREN => write!(f, ")"),

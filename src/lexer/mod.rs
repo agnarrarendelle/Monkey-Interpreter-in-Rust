@@ -64,6 +64,7 @@ impl Lexer {
             '(' => Token::LPAREN,
             ')' => Token::RPAREN,
             ',' => Token::COMMA,
+            ':' => Token::COLON,
             '+' => Token::PLUS,
             '-' => Token::MINUS,
             '/' => Token::SLASH,
