@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::{ast::*, lexer::Lexer, token::*};
 
 mod error;
@@ -116,6 +118,7 @@ impl Parser {
             Token::BANG | Token::MINUS => self.parse_prefix_expression(),
             Token::LPAREN => self.parse_group_expression(),
             Token::LBRACKET=>self.parse_array_literal(),
+            Token::LBRACE=>self.parse_hash_literal(),
             Token::IF => self.parse_if_expression(),
             Token::FUNCTION => self.parse_function_expression(),
             _ => Err(ParseError::unrecognizable_token_error()),
@@ -285,6 +288,29 @@ impl Parser {
     fn parse_array_literal(&mut self)->Result<Expression, ParseError>{
         let array_elems = self.parse_expression_list(&Token::RBRACKET)?;
         Ok(Expression::Literal(Literal::Array(array_elems)))
+    }
+
+    fn parse_hash_literal(&mut self)->Result<Expression, ParseError>{
+        let mut map = BTreeMap::new();
+
+        while !self.peek_token_is(&Token::RBRACE) {
+            self.next_token();
+            let key = self.parse_expression(Precedence::LOWEST)?;
+
+            self.expect_peek_token(&Token::COLON)?;
+            self.next_token();
+
+            let value = self.parse_expression(Precedence::LOWEST)?;
+
+            map.insert(key, value);
+
+            if !self.peek_token_is(&Token::RBRACE){
+                self.expect_peek_token(&Token::COMMA)?;
+            }
+        }
+
+        self.expect_peek_token(&Token::RBRACE)?;
+        Ok(Expression::Literal(Literal::Hash(map)))
     }
 
     fn parse_index_expression(&mut self, left_expr: Expression)->Result<Expression, ParseError>{
