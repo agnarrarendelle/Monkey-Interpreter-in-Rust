@@ -1,6 +1,6 @@
 pub mod builtins;
 mod error;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, collections::{BTreeMap, HashMap}};
 
 use crate::{
     ast::{BlockStatement, Expression, Literal, Node, Statement},
@@ -109,14 +109,18 @@ fn eval_expressions(expressions: &Vec<Expression>, env: Env) -> Result<Vec<Rc<Ob
     Ok(exprs)
 }
 
-fn eval_literal(lit: &Literal,env: Env) -> Result<Rc<Object>, EvalError> {
+fn eval_literal(lit: &Literal, env: Env) -> Result<Rc<Object>, EvalError> {
     match lit {
         Literal::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
         Literal::Bool(b) => Ok(match_boolean_expression(b)),
         Literal::String(s) => Ok(Rc::new(Object::String(s.to_string()))),
-        Literal::Array(elems)=>{
+        Literal::Array(elems) => {
             let elems = eval_expressions(elems, env)?;
             Ok(Rc::new(Object::Array(elems)))
+        },
+        Literal::Hash(map)=>{
+            let map = eval_hash_literal(map, env)?;
+            Ok(Rc::new(Object::Hash(map)))
         }
     }
 }
@@ -260,6 +264,24 @@ fn eval_if_expression(
     }
 }
 
+fn eval_hash_literal(map: &BTreeMap<Expression,Expression>, env:Env) -> Result<HashMap<Rc<Object>,Rc<Object>>, EvalError>{
+    let mut final_map = HashMap::new();
+
+    for(k,v) in map{
+        let key = eval_expression(k, env.clone())?;
+
+        if !key.is_hashtable(){
+            return  Err(unhashable_expression(&*key));
+        }
+
+        let value = eval_expression(v, env.clone())?;
+
+        final_map.insert(key, value);
+    }
+
+    Ok(final_map)
+}
+
 fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>, EvalError> {
     match &*func {
         Object::Funtion(params, body, env) => {
@@ -311,7 +333,7 @@ fn access_null() -> Rc<Object> {
     NULL.with(|n| n.clone())
 }
 
-fn check_container_index(index: i64, container_size: usize) -> Result<(), EvalError> {
+pub fn check_container_index(index: i64, container_size: usize) -> Result<(), EvalError> {
     if index < 0 {
         return Err(array_index_invalid(index));
     }
@@ -417,6 +439,13 @@ mod tests {
             "let newAdder = fn(x) {fn(y) { x + y };};let addTwo = newAdder(2);addTwo(2);",
             "4",
         )];
+
+        test_helper(&tests);
+    }
+
+    #[test]
+    fn test_array() {
+        let tests = [("[1,2]", "[1,2]")];
 
         test_helper(&tests);
     }
