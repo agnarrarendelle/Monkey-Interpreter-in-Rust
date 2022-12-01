@@ -1,6 +1,6 @@
 use crate::token::Token;
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap},
     fmt::{self},
 };
 

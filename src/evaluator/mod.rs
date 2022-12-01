@@ -252,7 +252,7 @@ fn eval_string_infix_expression(
     s2: &str,
 ) -> Result<Rc<Object>, EvalError> {
     match operator {
-        Token::PLUS => Ok(Rc::new(Object::String((s1.to_string() + s2)))),
+        Token::PLUS => Ok(Rc::new(Object::String(s1.to_string() + s2))),
         _ => Err(unknown_operator::infix(s1, operator, s2)),
     }
 }

@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::{token::Token, object::Object, ast::Expression};
+use crate::{token::Token, object::Object};
 pub struct EvalError(String);
 
 impl fmt::Display for EvalError{

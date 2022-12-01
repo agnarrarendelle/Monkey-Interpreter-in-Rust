@@ -1,5 +1,5 @@
 [package]
-name = "Interpreter_in_Rust"
+name = "interpreter_in_rust"
 version = "0.1.0"
 edition = "2021"
 

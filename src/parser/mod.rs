@@ -146,7 +146,7 @@ impl Parser {
                     left_expr = self.parse_index_expression(left_expr.unwrap())
 
                 },
-                _ => todo!(),
+                _ => unreachable!(),
             }
         }
 
