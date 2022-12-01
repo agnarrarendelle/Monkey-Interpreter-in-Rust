@@ -1,6 +1,7 @@
 pub(crate) mod environment;
 use std::collections::BTreeMap;
 use std::{fmt, rc::Rc};
+use std::hash::{Hash, Hasher};
 
 use self::environment::Env;
 use crate::ast::BlockStatement;
@@ -15,7 +16,7 @@ pub enum Object {
     Funtion(Option<Vec<String>>, BlockStatement, Env),
     Builtin(Builtin),
     Array(Vec<Rc<Object>>),
-    Hash(BTreeMap<Object, Object>),
+    Hash(BTreeMap<Rc<Object>, Rc<Object>>),
     Null,
 }
 
@@ -68,6 +69,17 @@ impl Object {
             }
             Object::Builtin(b) => format!("Builtin Function {}", b),
             Object::Null => format!("NULL"),
+        }
+    }
+}
+
+impl Hash for Object{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self{
+            Object::Integer(i)=>i.hash(state),
+            Object::String(s)=>s.hash(state),
+            Object::Boolean(b)=>b.hash(state),
+            _=>!unreachable!()
         }
     }
 }
