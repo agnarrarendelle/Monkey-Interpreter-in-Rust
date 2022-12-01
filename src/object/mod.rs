@@ -1,5 +1,5 @@
 pub(crate) mod environment;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::{fmt, rc::Rc};
 use std::hash::{Hash, Hasher};
 
@@ -16,9 +16,11 @@ pub enum Object {
     Funtion(Option<Vec<String>>, BlockStatement, Env),
     Builtin(Builtin),
     Array(Vec<Rc<Object>>),
-    Hash(BTreeMap<Rc<Object>, Rc<Object>>),
+    Hash(HashMap<Rc<Object>, Rc<Object>>),
     Null,
 }
+
+impl Eq for Object{}
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
