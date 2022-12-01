@@ -2,7 +2,7 @@ use std::{fmt, rc::Rc};
 
 use crate::object::Object;
 
-use super::{check_container_index, error::*};
+use super::{check_container_index, error::*, access_null};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Builtin {
@@ -11,6 +11,7 @@ pub enum Builtin {
     Last,
     Rest,
     Push,
+    Put
 }
 
 impl Builtin {
@@ -21,6 +22,7 @@ impl Builtin {
             "last" => Object::Builtin(Builtin::Last),
             "rest" => Object::Builtin(Builtin::Rest),
             "push" => Object::Builtin(Builtin::Push),
+            "put" => Object::Builtin(Builtin::Put),
             _ => return None,
         };
 
@@ -50,12 +52,13 @@ impl Builtin {
             Builtin::First =>first(args),
             Builtin::Last => last(args),
             Builtin::Rest => rest(args),
-            Builtin::Push => push(args)
+            Builtin::Push => push(args),
+            Builtin::Put=>put(args)
         }
     }
 }
 
-pub fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
         return Err(type_mismatch::wrong_argument_number(
             "first",
@@ -82,7 +85,7 @@ pub fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     }
 }
 
-pub fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
         return Err(type_mismatch::wrong_argument_number(
             "last",
@@ -108,7 +111,7 @@ pub fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     }
 }
 
-pub fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
         return Err(type_mismatch::wrong_argument_number(
             "rest",
@@ -134,7 +137,7 @@ pub fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     }
 }
 
-pub fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 2 {
         return Err(type_mismatch::wrong_argument_number(
             "push",
@@ -164,6 +167,14 @@ pub fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     }
 }
 
+fn put(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
+   for arg in args{
+    println!("{} ", arg)
+   };
+   
+   Ok(access_null())
+}
+
 impl fmt::Display for Builtin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -172,6 +183,7 @@ impl fmt::Display for Builtin {
             Builtin::Last => write!(f, "last"),
             Builtin::Rest => write!(f, "rest"),
             Builtin::Push => write!(f, "push"),
+            Builtin::Put => write!(f, "put"),
         }
     }
 }
