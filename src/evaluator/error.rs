@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::{token::Token, object::Object};
+use crate::{token::Token, object::Object, ast::Expression};
 pub struct EvalError(String);
 
 impl fmt::Display for EvalError{
@@ -65,54 +65,8 @@ pub fn array_index_invalid(index:i64)->EvalError{
 pub fn array_index_out_of_bound(index:i64)->EvalError{
     EvalError(format!("index {} exceeds the container length",index))
 }
-// impl EvalError{
-//     pub fn new(err: String)->Self{
-//         Self(err)
-//     }
 
-//     pub fn unknown_operator_error()
-// }
 
-// use std::fmt;
-
-// use crate::{object::Object, token::Token};
-
-// pub enum EvalError<'a> {
-//     UnknownOperator(UnknownOperatorError<'a>),
-// }
-
-// impl fmt::Display for EvalError<'_> {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self{
-//             Self::UnknownOperator(e)=>write!(f, "{}", e)
-            
-//         }
-//     }
-// }
-
-// pub enum UnknownOperatorError {
-//     Prefix(& Token, & Object),
-//     MinusPrefix(& Object),
-//     IntegerBooleanPrefix(& Token, & Object),
-//     IntegerInfix(i64, & Token, i64),
-//     BooleanInfix(bool, & Token, bool)
-// }
-// impl fmt::Display for UnknownOperatorError<'_> {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         let res = match self {
-//             UnknownOperatorError::Prefix(t, o) => format!("{}{}", t, o),
-//             UnknownOperatorError::MinusPrefix(o) => format!("-{}", o),
-//             UnknownOperatorError::IntegerBooleanPrefix(t, o) => {
-//                 format!("{} {}", t, o)
-//             }
-//             UnknownOperatorError::IntegerInfix(left, t, right) => {
-//                 format!("{} {} {}", left, t, right)
-//             },
-//             UnknownOperatorError::BooleanInfix(left,t ,right )=>{
-//                 format!("{} {} {}", left, t, right)
-//             }
-//         };
-
-//         write!(f, "Unknown Operator Error: {}", res)
-//     }
-// }
+pub fn unhashable_expression(obj:&Object)->EvalError{
+    EvalError(format!("{} cannot be used as a hashkey",obj))
+}
