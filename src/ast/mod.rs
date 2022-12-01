@@ -1,5 +1,8 @@
 use crate::token::Token;
-use std::fmt::{self};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::{self},
+};
 
 pub enum Node {
     Program(Vec<Statement>),
@@ -17,14 +20,14 @@ impl fmt::Display for Node {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
 pub enum Statement {
     Let(String, Expression),
     Return(Expression),
     Expression(Expression),
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
 pub struct BlockStatement(pub Vec<Statement>);
 impl fmt::Display for BlockStatement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -52,13 +55,13 @@ impl fmt::Display for Statement {
         }
     }
 }
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
 pub enum Expression {
     Identifier(String),
     Literal(Literal),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
-    Index(Box<Expression>,Box<Expression>),
+    Index(Box<Expression>, Box<Expression>),
     IfExpr(Box<Expression>, BlockStatement, Option<BlockStatement>),
     Func(Option<Vec<String>>, BlockStatement),
     FuncCall(Box<Expression>, Vec<Expression>),
@@ -72,8 +75,8 @@ impl fmt::Display for Expression {
             Expression::Prefix(tok, expr) => write!(f, "({}{})", tok, expr),
             Expression::Infix(left_expr, tok, right_expr) => {
                 write!(f, "({}{}{})", left_expr, tok, right_expr)
-            },
-            Expression::Index(left, index)=>write!(f, "({}[{}])", left, index),
+            }
+            Expression::Index(left, index) => write!(f, "({}[{}])", left, index),
             Expression::IfExpr(condition, consequence, alternative) => {
                 let condition_expr = format!("{}", condition);
                 let consequence_expr = format!("{}", consequence);
@@ -101,12 +104,13 @@ impl fmt::Display for Expression {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Hash)]
 pub enum Literal {
     Integer(i64),
     Bool(bool),
     String(String),
-    Array(Vec<Expression>)
+    Array(Vec<Expression>),
+    Hash(BTreeMap<Expression, Expression>),
 }
 
 impl fmt::Display for Literal {
@@ -115,12 +119,19 @@ impl fmt::Display for Literal {
             Self::Integer(int) => write!(f, "{}", int),
             Self::Bool(bool) => write!(f, "{}", bool),
             Self::String(s) => write!(f, "\"{}\"", s),
-            Self::Array(exprs)=>write!(f, "{}", format(&exprs, ", "))
+            Self::Array(exprs) => write!(f, "{}", format(&exprs, ", ")),
+            Self::Hash(map) => {
+                let map = map
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k, v))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                write!(f, "{{{}}}", map)
+            }
         }
     }
 }
-
-
 
 fn format<T: fmt::Display>(f: &Vec<T>, seperator: &str) -> String {
     f.iter()
