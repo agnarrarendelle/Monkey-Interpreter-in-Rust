@@ -1,4 +1,5 @@
 pub(crate) mod environment;
+use std::collections::BTreeMap;
 use std::{fmt, rc::Rc};
 
 use self::environment::Env;
@@ -14,6 +15,7 @@ pub enum Object {
     Funtion(Option<Vec<String>>, BlockStatement, Env),
     Builtin(Builtin),
     Array(Vec<Rc<Object>>),
+    Hash(BTreeMap<Object, Object>),
     Null,
 }
 
@@ -29,6 +31,15 @@ impl fmt::Display for Object {
                 None => writeln!(f, "fn() {{\n{}\n}}", body),
             },
             Object::Array(elems) => writeln!(f, "[{}]", get_array_element_string(elems)),
+            Object::Hash(map) => {
+                let map = map
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k, v))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                write!(f, "{{{}}}", map)
+            }
             Object::Builtin(b) => write!(f, "Builtin Function: {}", b),
             Object::Null => write!(f, "NULL"),
         }
@@ -46,7 +57,15 @@ impl Object {
                 Some(params) => format!("Function({}) {{\n{}\n}}", params.join(", "), body),
                 None => format!("Function() {{\n{}\n}}", body),
             },
-            Object::Array(elems)=>format!("Array[{}]", get_array_element_string(elems)),
+            Object::Array(elems) => format!("Array[{}]", get_array_element_string(elems)),
+            Object::Hash(map) => {
+                let map = map
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k, v))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("Map{{{}}}", map)
+            }
             Object::Builtin(b) => format!("Builtin Function {}", b),
             Object::Null => format!("NULL"),
         }
