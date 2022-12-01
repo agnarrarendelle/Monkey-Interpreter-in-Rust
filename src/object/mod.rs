@@ -71,6 +71,13 @@ impl Object {
             Object::Null => format!("NULL"),
         }
     }
+
+    pub fn is_hashtable(&self)->bool{
+        match self{
+            Self::Integer(_) | Self::Boolean(_) | Self::String(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Hash for Object{
