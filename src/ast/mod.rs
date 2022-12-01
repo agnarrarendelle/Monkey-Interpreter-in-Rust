@@ -20,14 +20,14 @@ impl fmt::Display for Node {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash, Ord)]
 pub enum Statement {
     Let(String, Expression),
     Return(Expression),
     Expression(Expression),
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash, Ord)]
 pub struct BlockStatement(pub Vec<Statement>);
 impl fmt::Display for BlockStatement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -55,7 +55,7 @@ impl fmt::Display for Statement {
         }
     }
 }
-#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Hash, Ord)]
 pub enum Expression {
     Identifier(String),
     Literal(Literal),
@@ -104,7 +104,7 @@ impl fmt::Display for Expression {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Hash)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Hash, Ord)]
 pub enum Literal {
     Integer(i64),
     Bool(bool),
