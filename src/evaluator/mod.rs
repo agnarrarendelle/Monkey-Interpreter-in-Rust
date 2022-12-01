@@ -1,6 +1,10 @@
 pub mod builtins;
 mod error;
-use std::{cell::RefCell, rc::Rc, collections::{BTreeMap, HashMap}};
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, HashMap},
+    rc::Rc,
+};
 
 use crate::{
     ast::{BlockStatement, Expression, Literal, Node, Statement},
@@ -117,8 +121,8 @@ fn eval_literal(lit: &Literal, env: Env) -> Result<Rc<Object>, EvalError> {
         Literal::Array(elems) => {
             let elems = eval_expressions(elems, env)?;
             Ok(Rc::new(Object::Array(elems)))
-        },
-        Literal::Hash(map)=>{
+        }
+        Literal::Hash(map) => {
             let map = eval_hash_literal(map, env)?;
             Ok(Rc::new(Object::Hash(map)))
         }
@@ -144,20 +148,26 @@ fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Obje
 }
 
 fn eval_index_expression(left: Rc<Object>, index: Rc<Object>) -> Result<Rc<Object>, EvalError> {
-    match *index {
-        Object::Integer(index) => match &*left {
-            Object::Array(arr) => {
-                check_container_index(index, arr.len())?;
-                Ok(arr[index as usize].clone())
-            }
-            Object::String(string) => {
-                check_container_index(index, string.len())?;
-                let char = string.chars().nth(index as usize).unwrap();
-                Ok(Rc::new(Object::String(char.to_string())))
-            }
-            _ => Err(type_mismatch::operation_unsupported(&*left)),
-        },
-        _ => Err(type_mismatch::operation_unsupported(&*index)),
+    let left =&*(left.clone());
+    let index = &*(index.clone());
+    if let (Object::Array(arr), Object::Integer(index)) = (left, index){
+        check_container_index(*index, arr.len())?;
+        Ok(arr[*index as usize].clone())
+    } else if let (Object::String(string), Object::Integer(index)) = (left, index ) {
+        check_container_index(*index, string.len())?;
+        let char = string.chars().nth(*index as usize).unwrap();
+        Ok(Rc::new(Object::String(char.to_string())))
+    }else if let Object::Hash(map) = left{
+        if !index.is_hashtable(){
+            return  Err(unhashable_expression(&index));
+        }
+
+        match map.get(index){
+            Some(val)=>Ok(val.clone()),
+            None=>Ok(access_null())
+        }
+    }else{
+        return  Err(type_mismatch::operation_unsupported(&index));
     }
 }
 
@@ -264,14 +274,17 @@ fn eval_if_expression(
     }
 }
 
-fn eval_hash_literal(map: &BTreeMap<Expression,Expression>, env:Env) -> Result<HashMap<Rc<Object>,Rc<Object>>, EvalError>{
+fn eval_hash_literal(
+    map: &BTreeMap<Expression, Expression>,
+    env: Env,
+) -> Result<HashMap<Rc<Object>, Rc<Object>>, EvalError> {
     let mut final_map = HashMap::new();
 
-    for(k,v) in map{
+    for (k, v) in map {
         let key = eval_expression(k, env.clone())?;
 
-        if !key.is_hashtable(){
-            return  Err(unhashable_expression(&*key));
+        if !key.is_hashtable() {
+            return Err(unhashable_expression(&*key));
         }
 
         let value = eval_expression(v, env.clone())?;
