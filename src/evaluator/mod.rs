@@ -135,7 +135,7 @@ fn eval_identifier(id: &str, env: Env) -> Result<Rc<Object>, EvalError> {
     } else if let Some(func) = Builtin::search(id) {
         Ok(Rc::new(func))
     } else {
-        Err(identifier_unfound::new(id))
+        Err(identifier_unfound(id))
     }
 }
 
@@ -143,7 +143,7 @@ fn eval_prefix_expression(operator: &Token, right: Rc<Object>) -> Result<Rc<Obje
     match operator {
         Token::BANG => eval_bang_operator_expression(right.clone()),
         Token::MINUS => eval_minus_prefix_operation(right.clone()),
-        _ => Err(unknown_operator::prefix(operator, &right)),
+        _ => Err(prefix_error(operator, &right)),
     }
 }
 
@@ -167,7 +167,7 @@ fn eval_index_expression(left: Rc<Object>, index: Rc<Object>) -> Result<Rc<Objec
             None=>Ok(access_null())
         }
     }else{
-        return  Err(type_mismatch::operation_unsupported(&index));
+        return  Err(operation_unsupported(&index));
     }
 }
 
@@ -186,7 +186,7 @@ fn eval_bang_operator_expression(expr: Rc<Object>) -> Result<Rc<Object>, EvalErr
 fn eval_minus_prefix_operation(expr: Rc<Object>) -> Result<Rc<Object>, EvalError> {
     match *expr {
         Object::Integer(i) => Ok(Rc::new(Object::Integer(-i))),
-        _ => Err(unknown_operator::minus_prefix(&expr)),
+        _ => Err(minus_prefix_error(&expr)),
     }
 }
 
@@ -205,7 +205,7 @@ fn eval_infix_expression(
             eval_boolean_infix_expression(*left, operator, *right)
         }
         (Object::String(s1), Object::String(s2)) => eval_string_infix_expression(s1, operator, s2),
-        _ => Err(type_mismatch::type_mismatch(
+        _ => Err(type_mismatch(
             &left_val.get_type(),
             operator,
             &right_val.get_type(),
@@ -227,7 +227,7 @@ fn eval_integer_infix_expression(
         Token::LT => return Ok(match_boolean_expression(&(left < right))),
         Token::EQ => return Ok(match_boolean_expression(&(left == right))),
         Token::NOTEQ => return Ok(match_boolean_expression(&(left != right))),
-        _ => return Err(unknown_operator::infix(&left, operator, &right)),
+        _ => return Err(infix_error(&left, operator, &right)),
     };
 
     Ok(Rc::new(res))
@@ -242,7 +242,7 @@ fn eval_boolean_infix_expression(
         Token::EQ => return Ok(match_boolean_expression(&(left == right))),
         Token::NOTEQ => return Ok(match_boolean_expression(&(left != right))),
 
-        _ => return Err(unknown_operator::infix(left, operator, right)),
+        _ => return Err(infix_error(left, operator, right)),
     };
 }
 
@@ -253,7 +253,7 @@ fn eval_string_infix_expression(
 ) -> Result<Rc<Object>, EvalError> {
     match operator {
         Token::PLUS => Ok(Rc::new(Object::String(s1.to_string() + s2))),
-        _ => Err(unknown_operator::infix(s1, operator, s2)),
+        _ => Err(infix_error(s1, operator, s2)),
     }
 }
 
@@ -308,7 +308,7 @@ fn apply_function(func: Rc<Object>, args: &Vec<Rc<Object>>) -> Result<Rc<Object>
             unwrap_return_value(evluated)
         }
         Object::Builtin(builtin) => builtin.apply(args),
-        _ => Err(type_mismatch::not_a_function(func)),
+        _ => Err(not_a_function(func)),
     }
 }
 

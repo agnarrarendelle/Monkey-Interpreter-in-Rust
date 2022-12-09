@@ -33,7 +33,7 @@ impl Builtin {
         match self {
             Builtin::Len => {
                 if args.len() != 1 {
-                    return Err(type_mismatch::wrong_argument_number(
+                    return Err(wrong_argument_number(
                         "len",
                         1,
                         args.len() as i64,
@@ -43,7 +43,7 @@ impl Builtin {
                 match &*args[0] {
                     Object::String(s) => Ok(Rc::new(Object::Integer(s.len() as i64))),
                     Object::Array(arr) => Ok(Rc::new(Object::Integer(arr.len() as i64))),
-                    _ => Err(type_mismatch::argument_type_unsupported(
+                    _ => Err(argument_type_unsupported(
                         args[0].clone(),
                         "len",
                     )),
@@ -60,7 +60,7 @@ impl Builtin {
 
 fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
-        return Err(type_mismatch::wrong_argument_number(
+        return Err(wrong_argument_number(
             "first",
             1,
             args.len() as i64,
@@ -78,7 +78,7 @@ fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
 
             Ok(arr[0].clone())
         }
-        _ => Err(type_mismatch::argument_type_unsupported(
+        _ => Err(argument_type_unsupported(
             args[0].clone(),
             "first",
         )),
@@ -87,7 +87,7 @@ fn first(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
 
 fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
-        return Err(type_mismatch::wrong_argument_number(
+        return Err(wrong_argument_number(
             "last",
             1,
             args.len() as i64,
@@ -104,7 +104,7 @@ fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
 
             Ok(arr[arr.len() - 1].clone())
         }
-        _ => Err(type_mismatch::argument_type_unsupported(
+        _ => Err(argument_type_unsupported(
             args[0].clone(),
             "last",
         )),
@@ -113,7 +113,7 @@ fn last(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
 
 fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 1 {
-        return Err(type_mismatch::wrong_argument_number(
+        return Err(wrong_argument_number(
             "rest",
             1,
             args.len() as i64,
@@ -130,7 +130,7 @@ fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
             }
             Ok(Rc::new(Object::Array(rest_arr)))
         }
-        _ => Err(type_mismatch::argument_type_unsupported(
+        _ => Err(argument_type_unsupported(
             args[0].clone(),
             "rest",
         )),
@@ -139,7 +139,7 @@ fn rest(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
 
 fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
     if args.len() != 2 {
-        return Err(type_mismatch::wrong_argument_number(
+        return Err(wrong_argument_number(
             "push",
             2,
             args.len() as i64,
@@ -153,14 +153,14 @@ fn push(args: &Vec<Rc<Object>>)-> Result<Rc<Object>, EvalError>{
                 new_str.push_str(&new_elem);
                 return Ok(Rc::new(Object::String(new_str)))
             }
-            _ => Err(type_mismatch::operation_unsupported(&new_elem)),
+            _ => Err(operation_unsupported(&new_elem)),
         },
         Object::Array(arr) => {
             let mut new_arr = arr.clone();
             new_arr.push(new_elem);
             Ok(Rc::new(Object::Array(new_arr)))
         }
-        _ => Err(type_mismatch::argument_type_unsupported(
+        _ => Err(argument_type_unsupported(
             args[0].clone(),
             "push",
         )),
